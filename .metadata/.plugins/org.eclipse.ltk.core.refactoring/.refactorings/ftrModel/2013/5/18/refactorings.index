@@ -1,0 +1,21 @@
+1367375110099	Copy file
+1367512570860	Rename field 'settlementUsageCharges'
+1367512635236	Rename field 'usageCharges'
+1367512813907	Rename method 'getSettlementUsageCharges'
+1367512832136	Rename method 'setSettlementUsageCharges'
+1367512863712	Rename field 'settlementUsageCharges'
+1367512883556	Rename method 'getSettlementUsageCharges'
+1367512903428	Rename method 'setSettlementUsageCharges'
+1367519489082	Rename field 'settlementUsageChargesCOP'
+1367519580905	Rename field 'settlementUsageChargesRetailersCOP'
+1367529688728	Copy compilation units
+1367529762355	Copy compilation units
+1367529841931	Copy compilation units
+1367530433814	Copy compilation units
+1367530480887	Copy compilation units
+1367530516156	Copy compilation units
+1367597283046	Copy file
+1367603308499	Rename field 'PoolEnergyPurchasesMWh'
+1367603324533	Rename field 'PoolEnergyPurchasesCOP'
+1367603337681	Rename field 'PoolEnergySalesMWh'
+1367603363210	Rename field 'PoolEnergySalesCOP'

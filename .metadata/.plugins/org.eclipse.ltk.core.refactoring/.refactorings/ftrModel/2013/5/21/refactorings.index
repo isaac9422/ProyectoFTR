@@ -1,0 +1,29 @@
+1369059531547	Copy file
+1369076893063	Rename field 'unRetailersSetttlementEnergyMarketCOP'
+1369076901551	Rename field 'unRetailersSetttlementEnergyMarketCOPWriter'
+1369076911124	Rename field 'nodRetailersSetttlementEnergyMarketCOP'
+1369076920407	Rename field 'nodRetailersSetttlementEnergyMarketCOPWriter'
+1369076951315	Rename field 'unGenerationUnitsSetttlementEnergyMarketCOP'
+1369076964888	Rename field 'unGenerationUnitsSetttlementEnergyMarketCOPWriter'
+1369076972647	Rename field 'nodGenerationUnitsSetttlementEnergyMarketCOP'
+1369076981855	Rename field 'nodGenerationUnitsSetttlementEnergyMarketCOPWriter'
+1369086191731	Rename local variable 'ftrsRemainingEnergyDemand'
+1369086199278	Rename local variable 'ftrsSettlementContractsPC'
+1369086209885	Rename local variable 'ftrsSettlementContractsPD'
+1369086221559	Rename local variable 'ftrsPoolEnergyPurchases'
+1369086229162	Rename local variable 'ftrsSettlementPoolEnergyPurchses'
+1369086236777	Rename local variable 'ftrsPoolEnergySales'
+1369086244376	Rename local variable 'ftrsSettlementPoolEnergySales'
+1369086253989	Rename local variable 'ftrsSettlementEnergyMarket'
+1369086578605	Rename method 'ftrSetSettlementEqualElemets'
+1369086597020	Rename method 'setSettlementEqualElemets'
+1369106825870	Copy file
+1369172126878	Copy file
+1369190957389	Copy file
+1369274015782	Rename field 'ftrSettlementCOP'
+1369274080535	Rename method 'getFtrSettlementCOP'
+1369274105762	Rename method 'setFtrSettlementCOP'
+1369274124096	Rename local variable 'ftrSettlementCOP'
+1369274153162	Rename field 'ftrRetailersSettlementFtrsIncomeCOP'
+1369317998393	Copy file
+1369361635327	Copy file

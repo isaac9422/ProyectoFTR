@@ -1,0 +1,542 @@
+package market;
+
+import java.io.IOException;
+import java.util.Scanner;
+import java.util.Vector;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.CategoryItemRenderer;
+import org.jfree.chart.renderer.category.CategoryStepRenderer;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.RefineryUtilities;
+
+import com.csvreader.CsvReader;
+import com.csvreader.CsvWriter;
+
+//import java.awt.Font;
+
+//import javax.swing.JFrame;
+
+//import org.jfree.chart.ChartPanel;
+
+public class Global {
+	
+	//
+	// índices
+	//
+	//public static int nUnits 		= 4; 	// número de unidades de generación
+	//public static int nGencos 	= g3; 	// número de compañías de generación
+	//public static int nLines 		= 11;	// número de líneas de transmisión
+	public static int nContracts 	= 4;  	// número de contratos de generación
+	public static int nGridcos		= 3; 	// número de compañías de transmisión
+	public static int nRetailers	= 8; 	// número de compañías comercializadoras
+	public static int horizon		= 1; 	// número de períodos de simulación
+	public static int nlags			= 3; 	// número de rezagos para promediación del precio [VERIFICAR]
+	public static int[] lengthMonth = {31,28,31,30,31,30,31,31,30,31,30,31}; // longitud de cada uno de los meses
+	public static int[] year		= {2010, 2011}; // años considerados
+	public static ReadWrite rw		= new  ReadWrite();	// función para leer y escribir
+	public static ArrayFactory factory = new ArrayFactory(); // función para modificar los arrays
+	public static ChargeInformation charge = new ChargeInformation(); // funciones para cargar información
+	public static String directory = "D:/Cristian/FinalModels/Models/ftrModel/";  // "F:/FinalModels/Models/ftrModel/"
+	public static String supplyS = directory + "supply.csv";			// archivo de ofertas
+	public static String demandS = directory + "demand.csv";			// archivo de demandas
+	public static String demandColS = directory + "demandCol.csv";		// archivo de demandas nacionales
+	public static String demandIntS = directory + "demandInt.csv";		// archivo de demandas internacionales
+	public static String idealS 	= directory + "idealResults.csv";	// archivo para los resultados del despacho ideal
+	public static String realS  	= directory + "realResults.csv";	// archivo para los resultados del despacho real
+	
+	
+	public static final XYSeriesCollection dataset = new XYSeriesCollection();    
+	public static final JFreeChart chart = ChartFactory.createXYStepChart(
+            "Spot price",      // chart title
+            "Time [hours]",          // x axis label
+            "Price [$/Mwh]",         // y axis label
+            dataset,                  // data
+            PlotOrientation.VERTICAL,
+            true,                     // include legend
+            true,                     // tooltips
+            false                     // urls
+        );
+	
+	
+	public final CategoryItemRenderer renderer = new CategoryStepRenderer(true);
+	
+	public Graphics gr1 = new Graphics("Prueba", dataset, renderer); // generación de gráficos
+	
+	
+	public Graphics gr = new Graphics("Prueba", dataset, chart); // generación de gráficos
+	
+	//public static MathFunctions MathFun = new MathFunctions(); // variables to use several math process
+	//public static Graphs graphs = new Graphs(); 
+	//public static ChartPanel panel = null; // = new ChartPanel(chart);
+	//public static JFrame frame = new JFrame("Graphs");
+	//public static Font labelFont = new Font("Arial", Font.BOLD, 16);
+	//public static Font tickFont = new Font("Arial", Font.BOLD, 12);
+	//public static Font titleFont = new Font("Arial", Font.BOLD, 18);
+	
+			
+	//
+	// String con los nombres de los generadores que poseen sólo una unidad de generación y que por tanto
+	// su nombre dentro de los archivos no varía. Los casos especiales son considerados directamente dentro del código 
+	// en el archivo ReadWrite
+	//
+	public static String[] generators = {
+		"ALBAN",		"BARRANQ3",		"BARRANQ4",		"BETANIA",		"CALIMA1",		"CHIVOR",		"COINCAUCA", 	"COROZO1",		"CTGEMG1",		"CTGEMG2",
+		"CTGEMG3",		"CVALLEC1",		"DORADA1",		"ECUADOR11",	"ECUADOR12",	"ECUADOR14",	"ECUADOR21",	"ECUADOR22",	"ECUADOR23",	"ECUADOR24",
+		"ESMERALDA",	"FLORES1",		"FLORES21",		"FLORES3",		"FLORIDA2",		"GUAJIR11",		"GUAJIR21",		"GUATAPE",		"GUATRON",		"GUAVIO",
+		"INSULA",		"JAGUAS",		"LATASAJERA",	"MAGUAFRE",		"MANTIOQ1",		"MBOGOTA1",		"MCALDERAS",	"MCASCADA1",	"MCAUCAN1",		"MCAUCAN2",
+		"MCIMARR1",		"MCQR1",		"MCUNDINAMARCA","MELBOSQUE",	"MEMCALI",		"MERILEC1",		"MHUILAQ1",		"MIEL1",		"MJEPIRAC",		"MMORRO1",
+		"MMORRO2",		"MNORDE1",		"MPRADO4",		"MRIOMAYO",		"MSANTANA",		"MTOLIMA1",		"MTULUA",		"MVALLEC1",		"MYOPAL1",		"M_PROVIDEN",
+		"PAGUA",		"PAIPA1",		"PAIPA2",		"PAIPA3",		"PAIPA4",		"PALENQ3",		"PLAYAS",		"PORCE2",		"PRADO",		"PROELEC1",
+		"PROELEC2",		"RPIEDRAS",		"SALVAJINA",	"SANCARLOS",	"SANFRANCISCO",	"TASAJER1",		"TCANDEL1",		"TCANDEL2",		"TCENTRO1",		"TEBSA",
+		"TEMCALI",		"TPIEDRAS",		"TSIERRA",		"TVALLE",		"TYOPAL2",		"URRA",			"VENEZUE1",		"ZIPAEMG2",		"ZIPAEMG3",		"ZIPAEMG4",
+		"ZIPAEMG5",		"MCARUQUIA",	"MGUANAQUITA",	"MCURRUCU1",	"MSANTARITA1",	"MCURRUCU",		"MSANTARITA",	"FLORES IVB",	"PORCE3",		"M_AMAIME",
+		"MSANTIAGO",	"FLORESIVB",	"PORCE3P",		"CSANCARLOS",	"FLORES IV",	"MBELMONTE",	"MNLIBARE"};
+	
+	
+	
+	//
+	// Nombres de los generadores a ser usados para crear los generadores 
+	// que participan en el mercado de energía
+	//
+	public static String[] generatorsNames = {
+			"MAGUAFRE",	"MCAUCAN1",	"MRIOMAYO",	"MTULUA",		"DORADA1", 		"ESMERALDA","INSULA", 	"MCQR1",	"SANFRANCISCO", "CHIVOR", 
+			"MCIMARR1",	"MMORRO1",	"MMORRO2", 	"M_PROVIDEN", 	"MCUNDINAM1",	"MEMCALI",	"URRA",		"BETANIA", 	"CTGEMG1", 		"CTGEMG2",
+			"CTGEMG3",	"GUAVIO",	"PAGUA", 	"ZIPAEMG2", 	"ZIPAEMG3",		"ZIPAEMG4", "ZIPAEMG5", "MBOGOTA1",	"MSANTANA",		"GUATAPE", 
+			"GUATRON", 	"LATASAJERA","PLAYAS", 	"PORCE2",		"TSIERRA", 		"MANTIOQ1", "MJEPIRACHI","ALBAN",	"CALIMA1", 		"PRADO", 
+			"SALVAJINA","TVALLE",	"MPRADO4", 	"MVALLEC1", 	"MELBOSQUE",	"COROZO1", 	"PALENQ3",  "MNORDE1", 	"FLORES1", 		"FLORES21",
+			"FLORES3", 	"BARRANQ3", "BARRANQ4",	"GUAJIR11", 	"GUAJIR21", 	"TEBSA", 	"FLORIDA2",	"MCAUCAN2", "MTOLIMA1", 	"RPIEDRAS",
+			"PAIPA1",	"PAIPA2",	"PAIPA3",	"PAIPA4", 		"MHUILAQ1", 	"JAGUAS",  	"MIEL1",	"SANCARLOS","TCENTRO_CC",	"VENEZUE1",   
+			"MCALDERAS","MCASCADA1","MERILEC1",	"PROELECT", 	"TCANDEL1",		"TCANDEL2", "TEMCALI",	"TASAJER1", "TPIEDRAS1", 	"TYOPAL2", 	
+			"MYOPAL1"};
+	
+	public static int nGencos = generatorsNames.length; 	// número de compañías de generación
+	
+	//
+	// Nombres de las unidades de generación a ser usados para crear las 
+	// unidades de generación que participan en el despacho
+	//
+	public static String[] generationUnitsNames = {
+		"ALBAN",		"BARRANQ3",		"BARRANQ4",		"BETANIA",		"CALIMA1",		"CHIVOR",		"COINCAUCA",		"COROZO1",		"CSANCARLOS",		"CTGEMG1",		
+		"CTGEMG2",		"CTGEMG3",		"CVALLEC1",		"DORADA1",		"ECUADOR11",	"ECUADOR12",	"ECUADOR13",		"ECUADOR14",	"ECUADOR21",		"ECUADOR22",
+		"ECUADOR23",	"ECUADOR24",	"ESMERALDA",	"FLORES1",		"FLORES21",		"FLORES3",		"FLORESIVB",		"FLORIDA2",		"GUAJIR11",			"GUAJIR21",
+		"GUATAPE",		"GUATRON",		"GUAVIO",		"INSULA",		"JAGUAS",		"LATASAJERA",	"MAGUAFRE",			"MANTIOQ1",		"MBELMONTE",		"MBOGOTA1",
+		"MCALDERAS",	"MCARUQUIA",	"MCASCADA1",	"MCAUCAN1",		"MCAUCAN2",		"MCIMARR1",		"MCQR1",			"MCUNDINAMARCA","MCURRUCU",			"MELBOSQUE",
+		"MEMCALI",		"MERILEC1",		"MGUANAQUITA",	"MHUILAQ1",		"MIEL1",		"MJEPIRAC",		"MMORRO1",			"MMORRO2",		"MNLIBARE",			"MNORDE1",
+		"MPRADO4",		"MRIOMAYO",		"MSANTANA",		"MSANTARITA",	"MSANTIAGO",	"MTOLIMA1",		"MTULUA",			"MVALLEC1",		"MYOPAL1",			"M_AMAIME",
+		"M_PROVIDEN",	"PAGUA",		"PAIPA1",		"PAIPA2",		"PAIPA3",		"PAIPA4",		"PALENQ3",			"PLAYAS",		"PORCE2",			"PORCE3",
+		"PORCE3P",		"PRADO",		"PROELEC1",		"PROELEC2",		"RPIEDRAS",		"SALVAJINA",	"SANCARLOS",		"SANFRANCISCO",	"TASAJER1",			"TCANDEL1",
+		"TCANDEL2",		"TCENTRO1",		"TEBSA",		"TEMCALI",		"TPIEDRAS",		"TSIERRA",		"TVALLE",			"TYOPAL2",		"URRA",				"VENEZUE1",
+		"ZIPAEMG2",		"ZIPAEMG3",		"ZIPAEMG4",		"ZIPAEMG5"};		
+	
+	public static int nUnits = generationUnitsNames.length; 	// número de unidades de generación
+	
+	//
+	// Nombres de cada uno de los nodos de demanda naciona
+	//
+	public static String[] nalnodesNames = {
+		"ANTIOQUI",	"ATLANTIC",	"BOGOTA",	"BOLIVAR",	"CAUCANAR", "CERROMAT",	"CHIVOR",	"CORDOSUC",	"CQR",	   "GCM",
+		"HUILACAQ",	"LAMIEL",	"MAGDAMED", "META",		"NORDESTE", "PAGUA",	"SANCARLO",	"TOLIMA",   "VALLECAU" };
+	public static int nnalNodes = nalnodesNames.length; // número de nodos nacionales (fronteras comerciales)
+	
+	//
+	// Nombres de cada uno de los nodos de demanda internacional.
+	//
+	public static String[] intnodesNames = { "COROZO", "CUATRICENTENARIO", "ECUADOR138", "ECUADOR220" };
+	public static int nintNodes = intnodesNames.length; // número de nodos internacionales(fronteras comerciales)
+	
+	//
+	// Nombres de cada uno de los nodos del sistema, los cuales representan las áreas operativas del mismo.
+	//
+	public static String[] nodesNames = {
+		"ANTIOQUI",	"ATLANTIC",	"BOGOTA",	"BOLIVAR",	"CAUCANAR", "CERROMAT",	"CHIVOR",	"CORDOSUC",	"CQR",	   "GCM",
+		"HUILACAQ",	"LAMIEL",	"MAGDAMED", "META",		"NORDESTE", "PAGUA",	"SANCARLO",	"TOLIMA",   "VALLECAU","COROZO", 
+		"CUATRICENTENARIO", "ECUADOR138", "ECUADOR220" };
+	public static int nNodes = nodesNames.length; // número total de nodos del sistema (fronteras comerciales)
+		
+	//
+	// Nombre de las líneas de transmisión
+	//	
+	public static String[] linesNames = {
+		"CAR1_CAR2", 	"ANT_CAR1", 	"NORD_CAR2", 	"CAR2_VEN", 
+		"NORD_VEN", 	"ANT_NORD", 	"ANT_ORI", 		"ANT_SUR", 
+		"SUR_ORI", 		"ORI_NORD",		"SUR_ECU"};
+	public static int nLines = linesNames.length;	// número de nodos (fronteras coemrciales)
+	
+	//
+	// Función para organizar las ofertas de los generadores apra el despacho horario de electricidad.
+	// El despacho considera las ofertas definitivas reportadas por XM, y no se tienen en cuenta los
+	// precios de arranque y parada. 
+	//
+	public static void organizerPowerBids(){
+		//
+		// Carga de los datos con las ofertas
+		//
+		// Vector dinámico para almacenar las ofertas diarias de los generadores
+		Vector<PowerBid> supply = new Vector<PowerBid>();
+		
+		// String para guardar el nombre del archivo con los datos de las ofertas
+		String supplyCsv = "";
+				
+		// Archivo para escribir las ofertas
+		CsvWriter supplyWriter = new CsvWriter(supplyS);
+		
+		try{
+			// Ciclo para recorrer los años
+			for(int year = 2010; year <=2011; year++){
+			
+				// Ciclo para recorrer los archivos por mes
+				for (int month = 0; month < 12; month++){
+					
+					// Ciclo para recorrer los archivos por día
+					for(int day = 0; day < lengthMonth[month]; day++){
+						//
+						// Control para hacer coincidir el nombre de los archivos con la ruta dada en el String supplyCsv
+						//
+						if(month+1 < 10){
+							if(day+1 < 10){
+								supplyCsv 	= directory + "supply/"+year+"/dOFE0"+(month+1)+"0"+(day+1)+".txt";	
+							}
+							else
+							{
+								supplyCsv 	= directory + "supply/"+year+"/dOFE0"+(month+1)+(day+1)+".txt";
+							}
+						}
+						else {
+							if(day+1 < 10){
+								supplyCsv 	= directory + "supply/"+year+"/dOFE"+(month+1)+"0"+(day+1)+".txt";	
+							}
+							else
+							{
+								supplyCsv 	= directory + "supply/"+year+"/dOFE"+(month+1)+(day+1)+".txt";
+							}
+						}
+						// Con la ruta dada se crea un CsvReader para leer el archivo
+						CsvReader supplyReader = new CsvReader(supplyCsv);
+						
+						// Control del progreso de la lectura
+						System.out.println("año\t"+year+"\tmes\t"+(month+1)+"\tday\t"+(day+1));
+						
+						// En el vector dinámico se almacenan las ofertas de los generadores
+						supply = Global.rw.readCsvSupplyVector(supplyReader, generationUnitsNames);
+						
+						// Se escriben las ofertas en un archivo .csv. Cada día en una unica fila. 
+						Global.rw.writeCsvPowerBids(supplyWriter, supply);
+					}
+				}
+			}
+		}
+		catch(Exception e)
+	    {
+	        System.out.println("organizerPowerBids ->"+e);
+	    }
+		// Cerrar el archivo creado
+		supplyWriter.close();
+	}
+	
+	
+	//
+	// Función para organizar las demandas de energía. Las demandas son horarias para cada uno de los nodos
+	// del sistema. Dichos nodos corresponden a las áreas operativas. 
+	//
+	public static void organizerNationalDemands(){
+		//
+		// Carga de los datos las demandas
+		//
+		// Vector dinámico para almacenar las demandas horarias por nodo
+		Vector<PowerDemand> demand = new Vector<PowerDemand>();
+		
+		// String para guardar el nombre del archivo con los datos de las demandas
+		String demandCsv = "";
+		
+		// Archivo para escribir las demandas
+		CsvWriter demandWriter = new CsvWriter(demandColS);
+				
+		try{
+			// Ciclo para recorrer los años
+			for(int year = 2010; year <=2011; year++){
+			
+				// Ciclo para recorrer los archivos por mes
+				for (int month = 0; month < 12; month++){
+					
+					// Ciclo para recorrer los archivos por día
+					for(int day = 0; day < lengthMonth[month]; day++){
+					
+						//
+						// Control para hacer coincidir el nombre de los archivos con la ruta dada en el String supplyCsv
+						//
+						if(month+1 < 10){
+							if(day+1 < 10){	
+								demandCsv 	= directory + "demand/"+year+"/dDEM0"+(month+1)+"0"+(day+1)+".txt";	
+							}
+							else
+							{
+								demandCsv 	= directory + "demand/"+year+"/dDEM0"+(month+1)+(day+1)+".txt";
+							}
+						}
+						else {
+							if(day+1 < 10){
+								demandCsv 	= directory + "demand/"+year+"/dDEM"+(month+1)+"0"+(day+1)+".txt";	
+							}
+							else
+							{
+								demandCsv 	= directory + "demand/"+year+"/dDEM"+(month+1)+(day+1)+".txt";
+							}
+						}
+						// Con la ruta dada se crea un CsvReader para leer el archivo
+						CsvReader demandReader = new CsvReader(demandCsv);
+						
+						// Control del progreso de la lectura
+						System.out.println("año\t"+year+"\tmes\t"+(month+1)+"\tday\t"+(day+1));
+						
+						// En el vector dinámico se almacenan las demandas
+						demand = Global.rw.readCsvDemandVector(demandReader, nalnodesNames);
+						
+						// Se escriben las demandas en un archivo .csv. Cada día en una unica fila. 
+						Global.rw.writeCsvPowerDemands(demandWriter, demand);
+					}	
+				}
+			}
+		}
+		catch(Exception e)
+	    {
+	        System.out.println("organizerNationalDemands ->"+e);
+	    }
+		// Cerrar el archivo creado
+		demandWriter.close();
+	}
+	
+	//
+	// Función para organizar las demandas internacionales de energía. Las demandas son horarias 
+	// para cada uno de los nodos del sistema. Dichos nodos corresponden a las áreas operativas. 
+	//
+	public static void organizerInternationalDemands(){
+		
+		//
+		// Carga de los datos las demandas internacionales
+		//
+		// Vector dinámico para almacenar las demandas internacionales
+		Vector<PowerDemand> intdemand = new Vector<PowerDemand>();
+		
+		// String para guardar el nombre del archivo con los datos de las demandas
+		String intdemandCsv = "";
+		
+		// Archivo para escribir las demandas
+		CsvWriter intdemandWriter = new CsvWriter(demandIntS);
+				
+		try{
+			// Ciclo para recorrer los años
+			for(int year = 2010; year <=2011; year++){
+			
+				// Ciclo para recorrer los archivos por mes
+				for (int month = 0; month < 12; month++){
+					
+					// Ciclo para recorrer los archivos por día
+					for(int day = 0; day < lengthMonth[month]; day++){
+					
+						//
+						// Control para hacer coincidir el nombre de los archivos con la ruta dada en el String supplyCsv
+						//
+						if(month+1 < 10){
+							if(day+1 < 10){	
+								intdemandCsv 	= directory + "demand/"+year+"/dDIN0"+(month+1)+"0"+(day+1)+".txt";	
+							}
+							else
+							{
+								intdemandCsv 	= directory + "demand/"+year+"/dDIN0"+(month+1)+(day+1)+".txt";
+							}
+						}
+						else {
+							if(day+1 < 10){
+								intdemandCsv 	= directory + "demand/"+year+"/dDIN"+(month+1)+"0"+(day+1)+".txt";	
+							}
+							else
+							{
+								intdemandCsv 	= directory + "demand/"+year+"/dDIN"+(month+1)+(day+1)+".txt";
+							}
+						}
+						// Con la ruta dada se crea un CsvReader para leer el archivo
+						CsvReader intdemandReader = new CsvReader(intdemandCsv);
+						
+						// Control del progreso de la lectura
+						System.out.println("año\t"+year+"\tmes\t"+(month+1)+"\tday\t"+(day+1));
+						
+						// En el vector dinámico se almacenan las demandas
+						intdemand = Global.rw.readCsvDemandVector(intdemandReader, intnodesNames);
+						
+						// Se escriben las demandas en un archivo .csv. Cada día en una unica fila. 
+						Global.rw.writeCsvPowerDemands(intdemandWriter, intdemand);
+					}	
+				}
+			}
+		}
+		catch(Exception e)
+	    {
+	        System.out.println("organizerInternationalDemands ->"+e);
+	    }
+		// Cerrar el archivo creado
+		intdemandWriter.close();
+	}
+	
+	//
+	// Función para organizar las demandas de energía. A partir de los archivos de demandas
+	// nacionales e internacionales se crea un archivo que contenga ambo, en el cual al conjunto 
+	// de demandas nacioanles se les agrega las internacionales como columnas a la derecha. 
+	//
+	public static void organizerDemands(){
+		
+		//
+		// Organización del archivo de demandas
+		//
+		// Archivo para escribir las demandas
+		CsvWriter demandWriter = new CsvWriter(demandS);
+				
+		try{
+			// Archivos para leer las demandas nacionales e internacionales
+			CsvReader naldemandReader  = new CsvReader(demandColS);
+			CsvReader intdemandReader  = new CsvReader(demandIntS);
+			
+			int row = 0;
+			while (naldemandReader.readRecord() && intdemandReader.readRecord())
+			{
+				// escritura de los datos de demanda nacional
+				for(int col = 0; col < naldemandReader.getColumnCount(); col++)
+				{
+					demandWriter.write(naldemandReader.get(col));
+				}
+				
+				// escritura de los datos de demanda internacional
+				for(int col = 0; col < intdemandReader.getColumnCount(); col++)
+				{
+					demandWriter.write(intdemandReader.get(col));
+				}
+				
+				demandWriter.endRecord(); // cambio de línea
+			}
+			// Cerrar los archivos
+			naldemandReader.close();
+			intdemandReader.close();
+		}
+		catch(Exception e)
+	    {
+	        System.out.println("organizerDemands ->"+e);
+	    }
+		// Cerrar el archivo
+		demandWriter.close();
+	}
+	
+	
+	//
+	// Menú principal para la jecución del modelo
+	//
+	public static void mainMenu() throws IOException
+	{
+		Scanner input = new Scanner( System.in );
+		int option; // opción de simulación
+		System.out.println("---------------------------------------------------------------");
+		System.out.println("			Ejecución menú principal						   ");
+		System.out.println("---------------------------------------------------------------");
+		System.out.println(" Opciones: ");
+		System.out.println("	1.- Organizar los datos de ofertas.");
+		System.out.println("	2.- Organizar los datos de demandas nacionales.");
+		System.out.println("	3.- Organizar los datos de demandas internacionales.");
+		System.out.println("	4.- Organizar los datos de demandas.");
+		System.out.println("	5.- Ejecutar modelo FTRs.");
+		System.out.println("	6.- Generar gráficoss.");
+		System.out.println("	7.- Salir.");
+		option = input.nextInt();
+		do
+		{
+			switch(option)
+			{
+				case 1:
+				{
+					Global.organizerPowerBids(); // organiza el archivo de ofertas por central de generación para todo el horizonte de tiempo considerado
+					secondMenu(); // llamada al manú interno
+					break;
+				}
+				case 2:
+				{
+					Global.organizerNationalDemands(); // organiza el archivo de demandas nacionales para todo el horizonte de tiempo considerado
+					secondMenu(); // llamada al manú interno
+					break;
+				}
+				case 3:
+				{
+					Global.organizerInternationalDemands(); // organiza el archivo de demandas internacionales para todo el horizonte de tiempo considerado
+					secondMenu(); // llamada al manú interno
+					break;
+				}
+				case 4:
+				{
+					Global.organizerDemands(); // organiza un archivo de demandas por nodo para todo el horizonte de tiempo considerado
+					secondMenu(); // llamada al manú interno
+					break;
+				}
+				case 5:
+				{    
+					FtrMain um = new FtrMain(); // ejecución del modelo FTRs
+					um.start();
+					secondMenu(); // llamada al manú interno
+					break;
+				}
+				case 6:
+				{    
+					Graphics gr = new Graphics("Prueba"); // generación de gráficos
+					gr.pack();
+					RefineryUtilities.centerFrameOnScreen(gr);
+					gr.setVisible(true);
+					secondMenu(); // llamada al manú interno
+					break;
+				} 
+				case 7:
+				{
+					System.exit(0);
+					break;
+				}
+				default :
+					System.out.println("Opción incorrecta");
+					secondMenu();
+					break;			    	
+			}
+				
+		} while (option != 7);		
+	}
+	
+	public static void secondMenu() throws IOException
+	{
+		Scanner input = new Scanner( System.in );
+		int option; // opción de simulación
+		System.out.println("---------------------------------------------------------------");
+		System.out.println("			Ejecución menú interno							   ");
+		System.out.println("---------------------------------------------------------------");
+		System.out.println(" Opciones: ");
+		System.out.println("	1.- Volver a menu principal.");
+		System.out.println("	2.- Salir.");
+		option = input.nextInt();
+		do
+		{
+			switch(option)
+			{
+				case 1:
+				{
+					mainMenu(); // llamada al manú interno
+					break;
+				}  			           
+				case 2:
+				{
+					System.exit(0); // salir
+					break;
+				}
+				default : 
+					System.out.println("Opción incorrecta");
+					secondMenu();
+					break;			    	
+			}
+				
+		} while (option != 2);	
+	}
+}

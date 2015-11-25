@@ -1,0 +1,51 @@
+package market;
+
+public class GenerationUnit {
+
+	// Datos generales
+	private int unitID; 				// código de identificación
+	private String unitName; 			// nombre de la unidad de generación
+	private int unitNode;					// frontera comercial
+	
+	// Datos técnicos
+	private double effectiveCapacity; 	// capacidad efectiva en MW
+	private double generationCost; 		// costo marginal de generación
+	//private double remainingCapacity; 	// capacidad remanente en MW [OPCIONAL]
+
+	// Datos mercado de energía
+	private int haveContracts;			// [0,1], tiene o no contratos
+	private GenerationContract[] generationContracts;	// lista de contratos de generación
+	
+	// Constructor vacío
+	public GenerationUnit(){}
+	
+	// Constructor con id, nombre, nodo, capacidad efectiva, costo de generación, haveContracts, contratos
+	public GenerationUnit(int unitID, String unitName, int unitNode, double effectiveCapacity, double generationCost, int haveContracts, GenerationContract[] generationContracts){
+		this.unitID = unitID;
+		this.unitName = unitName;
+		this.unitNode = unitNode;
+		this.effectiveCapacity = effectiveCapacity;
+		this.generationCost = generationCost;
+		this.haveContracts = haveContracts;
+		this.generationContracts = generationContracts;
+	}
+	
+	// Get methods
+	public int getUnitID(){return this.unitID;} // obtener el identificador de la unidad
+	public String getUnitName(){return this.unitName;} // obtener el nombre de la unidad
+	public int getNode(){return this.unitNode;} // obtener la forntera comercial de la unidad
+	public double getEffectiveCapacity(){return this.effectiveCapacity;} // obtener la capacidad efectiva de la unidad
+	public double getGenerationCost(){return this.generationCost;} // obtener el costo de generación de la unidad
+	public int getHaveContracts(){return this.haveContracts;} // saber si una unidad tiene o no contratos
+	public GenerationContract[] getGenerationContracts(){return this.generationContracts;} // obtener la lista de contratos de generación de la unidad
+	
+	// Get methods
+	public void setUnitID(int unitID){this.unitID = unitID;} // obtener el identificador de la unidad
+	public void setUnitName(String unitName){this.unitName = unitName;} // obtener el nombre de la unidad
+	public void setNode(int unitNode){this.unitNode = unitNode;} // obtener la forntera comercial de la unidad
+	public void setEffectiveCapacity(double effectiveCapacity){this.effectiveCapacity = effectiveCapacity;} // obtener la capacidad efectiva de la unidad
+	public void setGenerationCost(double generationCost){this.generationCost = generationCost;} // obtener el costo de generación de la unidad
+	public void setHaveContracts(int haveContracts){this.haveContracts = haveContracts;} // saber si una unidad tiene o no contratos
+	public void setGenerationContracts(GenerationContract[] generationContracts){this.generationContracts = generationContracts;} // obtener la lista de contratos de generación de la unidad
+		
+}

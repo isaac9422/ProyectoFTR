@@ -1,0 +1,23 @@
+COSAS BORRADAS:
+
+----Despacho idela sin calculo de flujos
+	// ideal dispatch solution
+	this.idealDispatch = DailyIdealDispatch.dispatch(varI, varIN, rngI, rngIN, powergen, anglevol, unserved, iteration,  
+			lowPowerLimit, dailyPowerBid, powerBidPrice, unsDemandCost, powerDemandVector, susceptance, powerLimit,  
+			flows, flowLb, flowUb, unservedLb, unservedUb, this, idealWriter);
+
+---- Lectura de datos desde excel
+	//data1.powerBidPriceXls	(iteration, powerBidPrice, sheetSupply);   	// get the power price bid by day by generation unit
+	//data1.powerBidXls		(iteration, dailyPowerBid, sheetSupply);		// get the power bid by hour by generation unit
+	//data1.powerDemandXls	(iteration, powerDemandVector, sheetDemand); 	// get the power demand value by hour by node
+			
+----Inclusión de pérdidas
+	//powerDemandVector = Global.factory.productoPuntoEscalar(powerDemandVector, 1.2);
+	
+----Establecer demanda
+	// set demand power
+	//this.setPowerDemand(powerDemandVector);	// set to operator
+	//this.powerDemandCloneR = powerDemandVector;
+	//this.setPowerDemand2Retailers(powerDemandVector);	// set to retailers
+			
+			

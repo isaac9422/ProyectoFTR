@@ -1,0 +1,17 @@
+1366915383427	Copy file
+1366946350314	Copy file
+1366993458457	Rename field 'contractEnergyPurchasesPCMWh'
+1366993488904	Rename field 'contractEnergyPurchasesPCCOP'
+1366993506224	Rename field 'contractMaxEnergyPurchasesPDMWh'
+1366993528132	Rename field 'contractEnergyPurchasesPDMWh'
+1366993544603	Rename field 'contractEnergyPurchasesPDCOP'
+1366993657620	Rename method 'getContractEnergyPurchasesPCMWh'
+1366993670882	Rename method 'getContractEnergyPurchasesPCCOP'
+1366993685296	Rename method 'getContractMaxEnergyPurchasesPDMWh'
+1366993701016	Rename method 'getContractEnergyPurchasesPDMWh'
+1366993713774	Rename method 'getContractEnergyPurchasesPDCOP'
+1366993731106	Rename method 'setContractEnergyPurchasesPCMWh'
+1366993745585	Rename method 'setContractEnergyPurchasesPCCOP'
+1366993766608	Rename method 'setContractMaxEnergyPurchasesPDMWh'
+1366993779724	Rename method 'setContractEnergyPurchasesPDMWh'
+1366993798373	Rename method 'setContractEnergyPurchasesPDCOP'

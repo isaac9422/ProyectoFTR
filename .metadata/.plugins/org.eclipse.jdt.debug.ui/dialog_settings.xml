@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item value="78" key="org.eclipse.jdt.debug.ui.jre_preference_page_context.columnWidth0"/>
+	<item value="C:\RepastSimphony-2.0\eclipse\plugins\repast.simphony.runtime_2.0.1\lib" key="JavaClasspathTab.LAST_PATH_SETTING"/>
+	<item value="1" key="org.eclipse.jdt.debug.ui.jre_preference_page_context.sortColumn"/>
+	<item value="141" key="org.eclipse.jdt.debug.ui.jre_preference_page_context.columnWidth1"/>
+	<item value="82" key="org.eclipse.jdt.debug.ui.jre_preference_page_context.columnWidth2"/>
+	<section name="org.eclipse.jdt.debug.ui.MAIN_METHOD_SELECTION_DIALOG">
+		<item value="true" key="ShowStatusLine"/>
+		<item value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#x0D;&#x0A;&lt;History&gt;&#x0D;&#x0A;&lt;historyRootNode&gt;&#x0D;&#x0A;&lt;infoNode&gt;=ftrModel/F:\/FinalModels\/Models\/ftrModel\/documentation\/libs\/repast.simphony.bin_and_src.jar&amp;lt;repast.simphony.runtime(RepastMain.class[RepastMain&lt;/infoNode&gt;&#x0D;&#x0A;&lt;infoNode&gt;=colModel/src&amp;lt;market{colModelMain.java[colModelMain&lt;/infoNode&gt;&#x0D;&#x0A;&lt;infoNode&gt;=colModel/src&amp;lt;market{ColModelMain.java[ColModelMain&lt;/infoNode&gt;&#x0D;&#x0A;&lt;infoNode&gt;=ftrModel/src&amp;lt;market{FtrMain.java[FtrMain&lt;/infoNode&gt;&#x0D;&#x0A;&lt;/historyRootNode&gt;&#x0D;&#x0A;&lt;/History&gt;" key="History"/>
+		<section name="DialogBoundsSettings">
+			<item value="600" key="DIALOG_WIDTH"/>
+			<item value="23" key="DIALOG_Y_ORIGIN"/>
+			<item value="265" key="DIALOG_X_ORIGIN"/>
+			<item value="500" key="DIALOG_HEIGHT"/>
+			<item value="1|Tahoma|8.25|0|WINDOWS|1|-11|0|0|0|400|0|0|0|1|0|0|0|0|Tahoma" key="DIALOG_FONT_NAME"/>
+		</section>
+	</section>
+	<section name="org.eclipse.jdt.internal.debug.ui.ExpressionInformationControlCreator$ExpressionInformationControl">
+		<item value="200" key="SashWeightDetails"/>
+		<item value="200" key="SashWeightTree"/>
+		<item value="162" key="HEIGHT"/>
+		<item value="506" key="WIDTH"/>
+	</section>
+	<section name="conditionHistory">
+	</section>
+	<section name="org.eclipse.jdt.debug.ui.RUNTIME_CLASSPATH_ADVANCED_DIALOG">
+		<item value="228" key="DIALOG_WIDTH"/>
+		<item value="238" key="DIALOG_Y_ORIGIN"/>
+		<item value="317" key="DIALOG_X_ORIGIN"/>
+		<item value="280" key="DIALOG_HEIGHT"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+	</section>
+</section>

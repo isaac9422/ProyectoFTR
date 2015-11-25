@@ -1,0 +1,540 @@
+package market;
+
+import java.awt.Color;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Scanner;
+import java.util.Vector;
+
+import org.jfree.ui.RefineryUtilities;
+
+import repast.simphony.space.continuous.ContinuousSpace;
+import repast.simphony.space.grid.Grid;
+
+import com.csvreader.CsvReader;
+import com.csvreader.CsvWriter;
+
+import agents.Generator;
+import agents.Operator;
+import agents.Retailer;
+import agents.Transmitter;
+
+// Cplex
+import ilog.concert.*;
+import ilog.cplex.*;
+
+public class FtrMain {
+
+	DailyIdealDispatch ideal = new DailyIdealDispatch();
+	Operator operator = new Operator();
+	
+	private ContinuousSpace<Object> space;
+	private Grid<Object> grid;
+	
+	
+	// Constructor vacío
+	public FtrMain(){}
+	
+	public void start() throws IOException{
+		
+		//
+		// Generadores
+		//
+		String[] generators = {
+				"MAGUAFRE",	"MCAUCAN1",	"MRIOMAYO",	"MTULUA",		"DORADA1",
+				"ESMERALDA","INSULA", 	"MCQR1",	"SANFRANCISCO", "CHIVOR", 
+				"MCIMARR1",	"MMORRO1",	"MMORRO2", 	"M_PROVIDEN", 	"MCUNDINAM1",
+				"MEMCALI",	"URRA",		"BETANIA", 	"CTGEMG1", 		"CTGEMG2",
+				"CTGEMG3",	"GUAVIO",	"PAGUA", 	"ZIPAEMG2", 	"ZIPAEMG3",		
+				"ZIPAEMG4", "ZIPAEMG5", "MBOGOTA1",	"MSANTANA",		"GUATAPE", 
+				"GUATRON", 	"LATASAJERA","PLAYAS", 	"PORCE2",		"TSIERRA", 	
+				"MANTIOQ1", "MJEPIRACHI","ALBAN",	"CALIMA1", 		"PRADO", 
+				"SALVAJINA","TVALLE",	"MPRADO4", 	"MVALLEC1", 	"MELBOSQUE",	
+				"COROZO1", 	"PALENQ3",  "MNORDE1", 	"FLORES1", 		"FLORES21",
+				"FLORES3", 	"BARRANQ3", "BARRANQ4",	"GUAJIR11", 	"GUAJIR21", 
+				"TEBSA", 	"FLORIDA2",	"MCAUCAN2", "MTOLIMA1", 	"RPIEDRAS",
+				"PAIPA1",	"PAIPA2",	"PAIPA3",	"PAIPA4", 		"MHUILAQ1", 
+				"JAGUAS",  	"MIEL1",	"SANCARLOS","TCENTRO_CC",	"VENEZUE1",   
+				"MCALDERAS","MCASCADA1","MERILEC1",	"PROELECT", 	"TCANDEL1",
+				"TCANDEL2", "TEMCALI",	"TASAJER1", "TPIEDRAS1", 	"TYOPAL2", 	
+				"MYOPAL1"};
+		
+				
+				
+		//
+		// Unidades de generación
+		//
+		String[] GenerationUnitsNames = {
+				"MRIOMAYO1",	"MRIOMAYO2",	"MRIOMAYO3",	"ESMERAL1",		"ESMERAL2", 	"INSULA1", 	"INSULA2", 	"INSULA3",
+				"SANFRAN1",		"SANFRAN2",		"SANFRAN3",		"CHIVOR1",		"CHIVOR2",		"CHIVOR3",	"CHIVOR4",	"CHIVOR5",
+				"CHIVOR6",		"CHIVOR7",		"CHIVOR8",		"URRA1",		"URRA2",		"URRA3",	"URRA4",	"BETANIA1",
+				"BETANIA2",		"BETANIA3",		"GUAVIO1",		"GUAVIO2",		"GUAVIO3",		"GUAVIO4",	"GUAVIO5",	"LAGUACA1",
+				"LAGUACA2",		"LAGUACA3",		"PARAISO1",		"PARAISO2",		"PARAISO3",		"GUATAPE1",	"GUATAPE2",	"GUATAPE3",
+				"GUATAPE4",		"GUATAPE5",		"GUATAPE6",		"GUATAPE7",		"GUATAPE8",		"GUADAL31",	"GUADAL32",	"GUADAL33",
+				"GUADAL34",		"GUADAL35",		"GUADAL36",		"GUADAL41",		"GUADAL42",		"GUADAL43",	"TRONERA1",	"TRONERA2",
+				"LATASAJ1",		"LATASAJ2",		"LATASAJ3",		"PLAYAS1",		"PLAYAS2",		"PLAYAS3",	"PORCE21",	"PORCE22",
+				"PORCE23",		"ALTANCHI1",	"ALTANCHI2",	"ALTANCHI3",	"BAJANCHI1",	"BAJANCHI2","BAJANCHI3","BAJANCHI4",
+				"CALIMA11",		"CALIMA12",		"CALIMA13",		"CALIMA14",		"PRADO1",		"PRADO2",	"PRADO3",	"SALVAJI1",
+				"SALVAJI2",		"SALVAJI3",		"TVALLE1",		"TVALLE2",		"FLORID21", 	"FLORID22","JAGUAS1",	"JAGUAS2",	
+				"MIEL11",		"MIEL12",		"MIEL13",		"SANCARL1",		"SANCARL2",		"SANCARL3",	"SANCARL4",	"SANCARL5",	
+				"SANCARL6",		"SANCARL7",		"SANCARL8",		"MCALDERAS1",	"MCALDERAS2",	"PROELEC1",	"PROELEC2",		
+				"MAGUAFRE",		"MCAUCAN1",		"MTULUA",		"DORADA1",		"MCQR1",    	"MCIMARR1",	"MMORRO1",	"MMORRO2", 		
+				"M_PROVIDEN", 	"MCUNDINAM1", 	"MEMCALI", 		 "CTGEMG1", 	"CTGEMG2", 		"CTGEMG3", 	"ZIPAEMG2", "ZIPAEMG3",		
+				"ZIPAEMG4",     "ZIPAEMG5",     "MBOGOTA1",		"MSANTANA", 	"TSIERRA", 		"MANTIOQ1", "MJEPIRACHI","MPRADO4",
+				"MVALLEC1", 	"MELBOSQUE",	"COROZO1", 		"PALENQ3",  	"MNORDE1", 		"FLORES1", 	"FLORES21",	"FLORES3",
+				"BARRANQ3", 	"BARRANQ4", 	"GUAJIR11", 	"GUAJIR21", 	"TEBSA", 		"MCAUCAN2", "MTOLIMA1", "RPIEDRAS", 
+				"PAIPA1", 	    "PAIPA2",		"PAIPA3", 		"PAIPA4", 		"MHUILAQ1", 	"TCENTRO_CC","VENEZUE1","MCASCADA1",
+				"MERILEC1",		"TCANDEL1", 	"TCANDEL2", 	"TEMCALI",		"TASAJER1", 	"TPIEDRAS1", "TYOPAL2", "MYOPAL1"};		
+		
+		GenerationUnit genMRIOMAYO1 = new GenerationUnit(GenerationUnitsNames[0]);
+		GenerationUnit genMRIOMAYO2 = new GenerationUnit(GenerationUnitsNames[1]);
+		GenerationUnit genMRIOMAYO3 = new GenerationUnit(GenerationUnitsNames[2]);
+		GenerationUnit genESMERAL1 = new GenerationUnit(GenerationUnitsNames[3]);
+		GenerationUnit genESMERAL2 = new GenerationUnit(GenerationUnitsNames[4]);
+		GenerationUnit INSULA1 = new GenerationUnit(GenerationUnitsNames[5]);
+		GenerationUnit INSULA2 = new GenerationUnit(GenerationUnitsNames[6]);
+		GenerationUnit INSULA3 = new GenerationUnit(GenerationUnitsNames[7]);
+		GenerationUnit SANFRAN1 = new GenerationUnit(GenerationUnitsNames[8]);
+		GenerationUnit SANFRAN2 = new GenerationUnit(GenerationUnitsNames[9]);
+		GenerationUnit SANFRAN3 = new GenerationUnit(GenerationUnitsNames[10]);
+		GenerationUnit CHIVOR1 = new GenerationUnit(GenerationUnitsNames[11]);
+		GenerationUnit CHIVOR2 = new GenerationUnit(GenerationUnitsNames[12]);
+		GenerationUnit CHIVOR3 = new GenerationUnit(GenerationUnitsNames[13]);
+		GenerationUnit CHIVOR4 = new GenerationUnit(GenerationUnitsNames[14]);
+		GenerationUnit CHIVOR5 = new GenerationUnit(GenerationUnitsNames[15]);
+		GenerationUnit CHIVOR6 = new GenerationUnit(GenerationUnitsNames[16]);
+		GenerationUnit CHIVOR7 = new GenerationUnit(GenerationUnitsNames[17]);
+		GenerationUnit CHIVOR8 = new GenerationUnit(GenerationUnitsNames[18]);
+		GenerationUnit URRA1 = new GenerationUnit(GenerationUnitsNames[19]);
+		GenerationUnit URRA2 = new GenerationUnit(GenerationUnitsNames[20]);
+		GenerationUnit URRA3 = new GenerationUnit(GenerationUnitsNames[21]);
+		GenerationUnit URRA4 = new GenerationUnit(GenerationUnitsNames[22]);
+		GenerationUnit BETANIA1 = new GenerationUnit(GenerationUnitsNames[23]);
+		GenerationUnit BETANIA2 = new GenerationUnit(GenerationUnitsNames[24]);
+		GenerationUnit BETANIA3 = new GenerationUnit(GenerationUnitsNames[25]);
+		GenerationUnit GUAVIO1 = new GenerationUnit(GenerationUnitsNames[26]);
+		GenerationUnit GUAVIO2 = new GenerationUnit(GenerationUnitsNames[27]);
+		GenerationUnit GUAVIO3 = new GenerationUnit(GenerationUnitsNames[28]);
+		GenerationUnit GUAVIO4 = new GenerationUnit(GenerationUnitsNames[29]);
+		GenerationUnit GUAVIO5 = new GenerationUnit(GenerationUnitsNames[30]);
+		GenerationUnit LAGUACA1 = new GenerationUnit(GenerationUnitsNames[31]);
+		GenerationUnit LAGUACA2 = new GenerationUnit(GenerationUnitsNames[32]);
+		GenerationUnit LAGUACA3 = new GenerationUnit(GenerationUnitsNames[33]);
+		GenerationUnit PARAISO1 = new GenerationUnit(GenerationUnitsNames[34]);
+		GenerationUnit PARAISO2 = new GenerationUnit(GenerationUnitsNames[35]);
+		GenerationUnit PARAISO3 = new GenerationUnit(GenerationUnitsNames[36]);
+		GenerationUnit GUATAPE1 = new GenerationUnit(GenerationUnitsNames[37]);
+		GenerationUnit GUATAPE2 = new GenerationUnit(GenerationUnitsNames[38]);
+		GenerationUnit GUATAPE3 = new GenerationUnit(GenerationUnitsNames[39]);
+		GenerationUnit GUATAPE4 = new GenerationUnit(GenerationUnitsNames[40]);
+		GenerationUnit GUATAPE5 = new GenerationUnit(GenerationUnitsNames[41]);
+		GenerationUnit GUATAPE6 = new GenerationUnit(GenerationUnitsNames[42]);
+		GenerationUnit GUATAPE7 = new GenerationUnit(GenerationUnitsNames[43]);
+		GenerationUnit GUATAPE8 = new GenerationUnit(GenerationUnitsNames[44]);
+		GenerationUnit GUADAL31 = new GenerationUnit(GenerationUnitsNames[45]);
+		GenerationUnit GUADAL32 = new GenerationUnit(GenerationUnitsNames[46]);
+		GenerationUnit GUADAL33 = new GenerationUnit(GenerationUnitsNames[47]);
+		GenerationUnit GUADAL34 = new GenerationUnit(GenerationUnitsNames[48]);
+		GenerationUnit GUADAL35 = new GenerationUnit(GenerationUnitsNames[49]);
+		GenerationUnit GUADAL36 = new GenerationUnit(GenerationUnitsNames[50]);
+		GenerationUnit GUADAL41 = new GenerationUnit(GenerationUnitsNames[51]);
+		GenerationUnit GUADAL42 = new GenerationUnit(GenerationUnitsNames[52]);
+		GenerationUnit GUADAL43 = new GenerationUnit(GenerationUnitsNames[53]);
+		GenerationUnit TRONERA1 = new GenerationUnit(GenerationUnitsNames[54]);
+		GenerationUnit TRONERA2 = new GenerationUnit(GenerationUnitsNames[55]);
+		GenerationUnit LATASAJ1 = new GenerationUnit(GenerationUnitsNames[56]);
+		GenerationUnit LATASAJ2 = new GenerationUnit(GenerationUnitsNames[57]);
+		GenerationUnit LATASAJ3 = new GenerationUnit(GenerationUnitsNames[58]);
+		GenerationUnit PLAYAS1 = new GenerationUnit(GenerationUnitsNames[59]);
+		GenerationUnit PLAYAS2 = new GenerationUnit(GenerationUnitsNames[60]);
+		GenerationUnit PLAYAS3 = new GenerationUnit(GenerationUnitsNames[61]);
+		GenerationUnit PORCE21 = new GenerationUnit(GenerationUnitsNames[62]);
+		GenerationUnit PORCE22 = new GenerationUnit(GenerationUnitsNames[63]);
+		GenerationUnit PORCE23 = new GenerationUnit(GenerationUnitsNames[64]);
+		GenerationUnit ALTANCHI1 = new GenerationUnit(GenerationUnitsNames[65]);
+		GenerationUnit ALTANCHI2 = new GenerationUnit(GenerationUnitsNames[66]);
+		GenerationUnit ALTANCHI3 = new GenerationUnit(GenerationUnitsNames[67]);
+		GenerationUnit BAJANCHI1 = new GenerationUnit(GenerationUnitsNames[68]);
+		GenerationUnit BAJANCHI2 = new GenerationUnit(GenerationUnitsNames[69]);
+		GenerationUnit BAJANCHI3 = new GenerationUnit(GenerationUnitsNames[70]);
+		GenerationUnit BAJANCHI4 = new GenerationUnit(GenerationUnitsNames[71]);
+		GenerationUnit CALIMA11 = new GenerationUnit(GenerationUnitsNames[72]);
+		GenerationUnit CALIMA12 = new GenerationUnit(GenerationUnitsNames[73]);
+		GenerationUnit CALIMA13 = new GenerationUnit(GenerationUnitsNames[74]);
+		GenerationUnit CALIMA14 = new GenerationUnit(GenerationUnitsNames[75]);
+		GenerationUnit PRADO1 = new GenerationUnit(GenerationUnitsNames[76]);
+		GenerationUnit PRADO2 = new GenerationUnit(GenerationUnitsNames[77]);
+		GenerationUnit PRADO3 = new GenerationUnit(GenerationUnitsNames[78]);
+		GenerationUnit SALVAJI1 = new GenerationUnit(GenerationUnitsNames[79]);
+		GenerationUnit SALVAJI2 = new GenerationUnit(GenerationUnitsNames[80]);
+		GenerationUnit SALVAJI3 = new GenerationUnit(GenerationUnitsNames[81]);
+		GenerationUnit TVALLE1 = new GenerationUnit(GenerationUnitsNames[82]);
+		GenerationUnit TVALLE2 = new GenerationUnit(GenerationUnitsNames[83]);
+		GenerationUnit FLORID21 = new GenerationUnit(GenerationUnitsNames[84]);
+		GenerationUnit FLORID22 = new GenerationUnit(GenerationUnitsNames[85]);
+		GenerationUnit JAGUAS1 = new GenerationUnit(GenerationUnitsNames[86]);
+		GenerationUnit JAGUAS2 = new GenerationUnit(GenerationUnitsNames[87]);
+		GenerationUnit MIEL11 = new GenerationUnit(GenerationUnitsNames[88]);
+		GenerationUnit MIEL12 = new GenerationUnit(GenerationUnitsNames[89]);
+		GenerationUnit MIEL13 = new GenerationUnit(GenerationUnitsNames[90]);
+		GenerationUnit SANCARL1 = new GenerationUnit(GenerationUnitsNames[91]);
+		GenerationUnit SANCARL2 = new GenerationUnit(GenerationUnitsNames[92]);
+		GenerationUnit SANCARL3 = new GenerationUnit(GenerationUnitsNames[93]);
+		GenerationUnit SANCARL4 = new GenerationUnit(GenerationUnitsNames[94]);
+		GenerationUnit SANCARL5 = new GenerationUnit(GenerationUnitsNames[95]);
+		GenerationUnit SANCARL6 = new GenerationUnit(GenerationUnitsNames[96]);
+		GenerationUnit SANCARL7 = new GenerationUnit(GenerationUnitsNames[97]);
+		GenerationUnit SANCARL8 = new GenerationUnit(GenerationUnitsNames[98]);
+		GenerationUnit MCALDERAS1 = new GenerationUnit(GenerationUnitsNames[99]);
+		GenerationUnit MCALDERAS2 = new GenerationUnit(GenerationUnitsNames[100]);
+		GenerationUnit PROELEC1 = new GenerationUnit(GenerationUnitsNames[101]);
+		GenerationUnit PROELEC2 = new GenerationUnit(GenerationUnitsNames[102]);
+		GenerationUnit MAGUAFRE = new GenerationUnit(GenerationUnitsNames[103]);
+		GenerationUnit MCAUCAN1 = new GenerationUnit(GenerationUnitsNames[104]);
+		GenerationUnit MTULUA = new GenerationUnit(GenerationUnitsNames[105]);
+		GenerationUnit DORADA1 = new GenerationUnit(GenerationUnitsNames[106]);
+		GenerationUnit MCQR1 = new GenerationUnit(GenerationUnitsNames[107]);
+		GenerationUnit MCIMARR1 = new GenerationUnit(GenerationUnitsNames[108]);
+		GenerationUnit MMORRO1 = new GenerationUnit(GenerationUnitsNames[109]);
+		GenerationUnit MMORRO2 = new GenerationUnit(GenerationUnitsNames[110]);
+		GenerationUnit M_PROVIDEN = new GenerationUnit(GenerationUnitsNames[111]);
+		GenerationUnit MCUNDINAM1 = new GenerationUnit(GenerationUnitsNames[112]);
+		GenerationUnit MEMCALI = new GenerationUnit(GenerationUnitsNames[113]);
+		GenerationUnit CTGEMG1 = new GenerationUnit(GenerationUnitsNames[114]);
+		GenerationUnit CTGEMG2 = new GenerationUnit(GenerationUnitsNames[115]);
+		GenerationUnit CTGEMG3 = new GenerationUnit(GenerationUnitsNames[116]);
+		GenerationUnit ZIPAEMG2 = new GenerationUnit(GenerationUnitsNames[117]);
+		GenerationUnit ZIPAEMG3 = new GenerationUnit(GenerationUnitsNames[118]);
+		GenerationUnit ZIPAEMG4 = new GenerationUnit(GenerationUnitsNames[119]);
+		GenerationUnit ZIPAEMG5 = new GenerationUnit(GenerationUnitsNames[120]);
+		GenerationUnit MBOGOTA1 = new GenerationUnit(GenerationUnitsNames[121]);
+		GenerationUnit MSANTANA = new GenerationUnit(GenerationUnitsNames[122]);
+		GenerationUnit TSIERRA = new GenerationUnit(GenerationUnitsNames[123]);
+		GenerationUnit MANTIOQ1 = new GenerationUnit(GenerationUnitsNames[124]);
+		GenerationUnit MJEPIRACHI = new GenerationUnit(GenerationUnitsNames[125]);
+		GenerationUnit MPRADO4 = new GenerationUnit(GenerationUnitsNames[126]);
+		GenerationUnit MVALLEC1 = new GenerationUnit(GenerationUnitsNames[127]);
+		GenerationUnit MELBOSQUE = new GenerationUnit(GenerationUnitsNames[128]);
+		GenerationUnit COROZO1 = new GenerationUnit(GenerationUnitsNames[129]);
+		GenerationUnit PALENQ3 = new GenerationUnit(GenerationUnitsNames[130]);
+		GenerationUnit MNORDE1 = new GenerationUnit(GenerationUnitsNames[131]);
+		GenerationUnit FLORES1 = new GenerationUnit(GenerationUnitsNames[132]);
+		GenerationUnit FLORES21 = new GenerationUnit(GenerationUnitsNames[133]);
+		GenerationUnit FLORES3 = new GenerationUnit(GenerationUnitsNames[134]);
+		GenerationUnit BARRANQ3 = new GenerationUnit(GenerationUnitsNames[135]);
+		GenerationUnit BARRANQ4 = new GenerationUnit(GenerationUnitsNames[136]);
+		GenerationUnit GUAJIR11 = new GenerationUnit(GenerationUnitsNames[137]);
+		GenerationUnit GUAJIR21 = new GenerationUnit(GenerationUnitsNames[138]);
+		GenerationUnit TEBSA = new GenerationUnit(GenerationUnitsNames[139]);
+		GenerationUnit MCAUCAN2 = new GenerationUnit(GenerationUnitsNames[140]);
+		GenerationUnit MTOLIMA1 = new GenerationUnit(GenerationUnitsNames[141]);
+		GenerationUnit RPIEDRAS = new GenerationUnit(GenerationUnitsNames[142]);
+		GenerationUnit PAIPA1 = new GenerationUnit(GenerationUnitsNames[143]);
+		GenerationUnit PAIPA2 = new GenerationUnit(GenerationUnitsNames[144]);
+		GenerationUnit PAIPA3 = new GenerationUnit(GenerationUnitsNames[145]);
+		GenerationUnit PAIPA4 = new GenerationUnit(GenerationUnitsNames[146]);
+		GenerationUnit MHUILAQ1 = new GenerationUnit(GenerationUnitsNames[147]);
+		GenerationUnit TCENTRO_CC = new GenerationUnit(GenerationUnitsNames[148]);
+		GenerationUnit VENEZUE1 = new GenerationUnit(GenerationUnitsNames[149]);
+		GenerationUnit MCASCADA1 = new GenerationUnit(GenerationUnitsNames[150]);
+		GenerationUnit MERILEC1 = new GenerationUnit(GenerationUnitsNames[151]);
+		GenerationUnit TCANDEL1 = new GenerationUnit(GenerationUnitsNames[152]);
+		GenerationUnit TCANDEL2 = new GenerationUnit(GenerationUnitsNames[153]);
+		GenerationUnit TEMCALI = new GenerationUnit(GenerationUnitsNames[154]);
+		GenerationUnit TASAJER1 = new GenerationUnit(GenerationUnitsNames[155]);
+		GenerationUnit TPIEDRAS1 = new GenerationUnit(GenerationUnitsNames[156]);
+		GenerationUnit TYOPAL2 = new GenerationUnit(GenerationUnitsNames[157]);
+		GenerationUnit MYOPAL1 = new GenerationUnit(GenerationUnitsNames[158]);
+		
+			
+		
+		
+		
+		Generator genco1 = new Generator("GENCO1");
+		Generator genco2 = new Generator("GENCO2");
+		Generator genco3 = new Generator("GENCO3");
+		//Generator gen4 = new Generator("GENCO4");
+		//Generator gen5 = new Generator("GENCO5");
+		//Generator gen6 = new Generator("GENCO6");
+		//Generator gen7 = new Generator("GENCO7");
+		//Generator gen8 = new Generator("GENCO8");
+		
+		// Comercializadores
+		Retailer retailco1 = new Retailer("RETAILER1",1);
+		Retailer retailco2 = new Retailer("RETAILER2",2);
+		Retailer retailco3 = new Retailer("RETAILER3",3);
+		//Retailer ret4 = new Retailer("RETAILER4");
+		//Retailer ret5 = new Retailer("RETAILER5");
+		//Retailer ret6 = new Retailer("RETAILER6");
+		//Retailer ret7 = new Retailer("RETAILER7");
+		//Retailer ret8 = new Retailer("RETAILER8");
+			
+		// Transmisores
+		Transmitter gridco1 = new Transmitter("GRIDCO1");
+		Transmitter gridco2 = new Transmitter("GRIDCO2");
+		Transmitter gridco3 = new Transmitter("GRIDCO3");
+		//Transmitter trans4 = new Transmitter("GRIDCO4");
+		//Transmitter trans5 = new Transmitter("GRIDCO5");
+		//Transmitter trans6 = new Transmitter("GRIDCO6");
+		//Transmitter trans7 = new Transmitter("GRIDCO7");
+		//Transmitter trans8 = new Transmitter("GRIDCO8");
+		
+		// Unidades de generación
+		// Constructor con id, nombre, nodo, capacidad efectiva, costo de generación
+		GenerationUnit unit1 = new GenerationUnit(1,"U1",1,140,7.5);
+		GenerationUnit unit2 = new GenerationUnit(2,"U2",1,285,6.0);
+		GenerationUnit unit3 = new GenerationUnit(3,"U3",2,90,14.0);
+		GenerationUnit unit4 = new GenerationUnit(4,"U4",3,85,10.0);
+		
+		// Líneas de transmisión
+		// Constructor con identificador, propietario, nodo origen, nodo destino, 
+		// susceptancia y límite de flujo de potencia
+		TransmissionLine line1 = new TransmissionLine(1,gridco1,1,2,5,126);	// nodo 1 - nodo 2
+		TransmissionLine line2 = new TransmissionLine(2,gridco2,1,3,5,250);	// nodo 1 - nodo 3
+		TransmissionLine line3 = new TransmissionLine(3,gridco3,2,3,10,130); // nodo 2 - nodo 3
+		
+		// generation contracts
+		GenerationContract contractG2U2R1 = new GenerationContract("C1",genco2,unit2,retailco1,
+				new double[]{50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0},
+				new double[]{4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,},
+				1,1,1,365);
+		GenerationContract contractG2U2R3 = new GenerationContract("C2",genco2,unit2,retailco3,
+				new double[]{160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0},
+				new double[]{5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0},
+				1,3,1,365);
+		GenerationContract contractG2U2R2 = new GenerationContract("C3",genco2,unit2,retailco2,
+				new double[]{60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0},
+				new double[]{5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5},
+				1,2,1,365);
+		GenerationContract contractG1U1R3 = new GenerationContract("C4",genco1,unit1,retailco3,
+				new double[]{120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0},
+				new double[]{6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5},
+				1,3,1,365);
+		//
+		/* DATOS */
+		//
+		// Límite inferior para el ángulo de voltaje en cada nodo
+		double[] angleLb	= Global.factory.repVec(0.0, 24*Global.nNodes);
+		
+		// Límite superior para el ángulo de voltaje en cada nodo
+		double[] angleUb    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360};
+
+		
+		
+		
+		// Límite inferior para los flujos en el despacho ideal
+		double[] flowLb	= Global.factory.repVec(-Double.MAX_VALUE, 24*Global.nLines);
+				
+		// Límite superior para los flujos en el despacho ideal
+		double[] flowUb = Global.factory.repVec(Double.MAX_VALUE, 24*Global.nLines);
+		
+		// Límite inferior para la demanda no atendida en cada nodo
+		double[] unservedLb	= Global.factory.repVec(0.0, 24*Global.nNodes);
+		
+		// Límite superior para la demanda no atendida en cada nodo
+		double[] unservedUb = Global.factory.repVec(Double.MAX_VALUE, 24*Global.nNodes);
+		
+		// Límite inferior para la potencia generada por cada unidad
+		double [] lowPowerLimit = Global.factory.repVec(0.0, 24*Global.nUnits);
+				
+		// Costo de la demanda no atendida en cada nodo
+		double [] unsDemandCost = Global.factory.repVec(4000000.0, 24*Global.nNodes);
+		
+		// Susceptancia de cada línea
+		//double [] susceptance = {200,200,200,200,200,200,200,200,200,200,200};
+		//double [] susceptance = {5,5,5,5,5,5,5,5,5,5,5};
+		double [] susceptance = {0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01};
+		
+		// Límite del flujo de potencia para cada línea
+		double [] powerLimit = {1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000};
+		
+		//double [] susceptance 			= operator.getSusceptances();		// susceptances of all lines
+		//double [] powerLimit 			= operator.getPowerFlowLimits();	// power flows limits of all lines
+		
+		double [][] powerDemandVector   = new double[Global.nNodes][24];	// matrix of demand by hour by node
+		double [][] dailyPowerBid		= new double[Global.nUnits][24];	// daily offer of price all generators
+		double [][] powerBidPrice		= new double[Global.nUnits][24];	// daily offer of power of all generators for each hour
+		
+		// result of dispatch process
+		double [] generation	 = new double[24*Global.nUnits];	// hourly programmed generation
+		double [] nodalPrices	 = new double[24*Global.nNodes];
+		double [] unservedDemand = new double[24*Global.nNodes];	// hourly unserved demand
+		double [] flows 		 = new double[24*Global.nLines];	// flow of power by line by hour
+		double dispatchCost		= 0.0;						// cost value of daily dispatch
+		//double [][] dispatch = {generation,nodalPrices,unservedDemand,flows,dispatchCost};
+				
+		//double [] unitCosts 		= {7.5,6.0,14.0,10.0}; 
+		//double [] unitCosts 		= operator.getGenerationCosts();
+		//double [][] unitCostMatrix 	= Global.factory.repMat(unitCosts,4,24);
+		//double [] generationCost 	= Global.factory.mat2vec(unitCostMatrix,4,24);
+		
+		//data.printVector(generationCost);
+		
+		//
+		/* STRINGS PARA LAS VARIABLES DEL PROBLEMA DE OPTIMIZACIÓN */
+		//
+		// Variables para la generación
+		String[] powergen = new String[24*Global.nUnits];
+		int j = 0; 
+		for(int i = 0; i < Global.nUnits; i++){
+			for(int h = 0; h < 24; h++){
+				powergen[j] = "GP_"+Global.generationUnitsNames[i]+"_"+h;
+				j = j + 1;
+			}	
+		}
+				
+		// Variables para el ángulo de voltaje
+		String[] anglevol = new String[24*Global.nNodes];
+		j = 0; 
+		for(int i = 0; i < Global.nNodes; i++){
+			for(int h = 0; h < 24; h++){
+				anglevol[j] = "VA_"+Global.nodesNames[i]+"_"+h;
+				j = j +1;
+			}	
+		}
+		//Global.rw.printStringVector(anglevol);
+		
+		
+		// Variables para los flujos
+		String[] flowsPot = new String[24*Global.nLines];
+		j = 0; 
+		for(int i = 0; i < Global.nLines; i++){
+			for(int h = 0; h < 24; h++){
+				flowsPot[j] = "FL_"+Global.linesNames[i]+"_"+h;
+				j = j +1;
+			}	
+		}
+			
+		// Variables para la demanda no atendida
+		String[] unserved = new String[24*Global.nNodes];
+		j = 0; 
+		for(int i = 0; i < Global.nNodes; i++){
+			for(int h = 0; h < 24; h++){
+				unserved[j] = "UD_"+Global.nodesNames[i]+"_"+h;
+				j = j +1;
+			}	
+		}
+		
+		try{
+			
+			//
+			/* VARIABLES PARA EL DESPACHO */
+			//
+			// Matriz de variables
+			//IloNumVar[][] varI = new IloNumVar[3][]; // despacho ideal
+			//IloNumVar[][] varI = new IloNumVar[2][]; // despacho ideal
+			//IloNumVar[][] varR = new IloNumVar[3][]; // despacho real
+			
+			IloNumVar[][] varI = new IloNumVar[2][]; // despacho ideal
+			IloNumVar[][] varR = new IloNumVar[3][]; // despacho real
+			IloNumVar[][] varIf = new IloNumVar[1][]; // despacho ideal
+			
+			// Matriz para guardar las restricciones del problema del despacho ideal
+			//IloRange[][]  rngI = new IloRange[1][];
+			//rngI[0] = new IloRange[192];
+			//rngI[0] = new IloRange[24];
+			
+			IloRange[][]  rngI = new IloRange[1][];
+			rngI[0] = new IloRange[24];
+			
+			IloRange[][]  rngIf = new IloRange[1][];
+			rngIf[0] = new IloRange[192];
+			
+			// Matriz para guardar las restricciones del problema del despacho real
+			IloRange[][]  rngR = new IloRange[2][];
+	        rngR[0] = new IloRange[72];
+			rngR[1] = new IloRange[144];
+			
+			//
+			/* ARCHIVOS PARA LEER DATOS Y GUARDAR RESULTADOS */
+			//	
+			// Archivo con los datos de la demanda
+			CsvReader demandReader = new CsvReader(Global.demandS);
+			int[] posDem = new int[Global.nNodes];
+			for (int i = 0; i < Global.nNodes; i++){
+				posDem[i] = i*25;
+			}
+			double [][] demand = Global.rw.readCsv(demandReader, 730, Global.nNodes*25, posDem); // matriz con los datos de demanda por nodo por hora	
+			
+			// Archivo con los datos de la oferta
+			CsvReader supplyReader = new CsvReader(Global.supplyS);
+			int[] posSup = new int[Global.nUnits];
+			for (int i = 0; i < Global.nUnits; i++){
+				posSup[i] = i*26;
+			}
+			double [][] supply = Global.rw.readCsv(supplyReader, 730, Global.nUnits*26, posSup); // matriz con los datos de oferta por planta por hora
+			
+			// 
+			// ARCHIVOS PARA ESCRIBIR LOS RESULTADOS
+			//
+			// Archivo para escribir los resultados del despacho ideal
+			CsvWriter idealWriter = new CsvWriter(Global.idealS);
+			
+			// Archivo para escribir los resultados del despacho real
+			CsvWriter realWriter = new CsvWriter(Global.realS);
+			
+			Global.gr.pack();
+			Global.gr.setForeground(Color.BLUE);
+			RefineryUtilities.centerFrameOnScreen(Global.gr);
+			Global.gr.setVisible(true);
+				
+	        // Para cada iteración en el tiempo de simulación
+			for (int iteration = 0; iteration < Global.horizon; iteration++){
+				operator.management(iteration, varI, varIf, varR, rngI, rngIf, rngR, powergen, flowsPot, 
+						unserved, lowPowerLimit, dailyPowerBid,
+						powerBidPrice, unsDemandCost, powerDemandVector, susceptance,
+						powerLimit, generation, nodalPrices, flows, unservedDemand, dispatchCost, 
+						flowLb, flowUb, unservedLb, unservedUb, demand, supply, idealWriter, realWriter);
+				
+				System.gc();
+			}
+			idealWriter.close();
+			realWriter.close();
+			
+			double [] totalSupply = new double[24];
+			for(int h = 0; h < 24; h++){
+				for(int i = 0; i < Global.nUnits; i++){
+					totalSupply[h] = totalSupply[h] + operator.getIdealDispatch().getGeneration()[i][h];
+				}
+			}
+			
+			double [] totalDemand = new double[24];
+			for(int h = 0; h < 24; h++){
+				for(int i = 0; i < Global.nNodes; i++){
+					totalDemand[h] = totalDemand[h] + powerDemandVector[i][h];
+				}
+			}
+			System.out.println("Lo que se tiene");
+			Global.rw.printVector(totalSupply);
+			Global.rw.printVector(totalDemand);
+			
+			}
+		catch(Exception e)
+	    {
+	        System.out.println("Exception ->"+e);
+	    }
+    	
+	}
+
+	
+	/**
+	 * @param args
+	 * @throws IOException 
+	 */
+	public static void main(String[] args) throws IOException {
+		
+		long startTime = System.currentTimeMillis();
+		Global.mainMenu();
+		// tiempo de ejecución
+		long runTime = System.currentTimeMillis() - startTime;
+		System.out.println("Run time: " + runTime + " miliseconds");		
+	}
+
+}

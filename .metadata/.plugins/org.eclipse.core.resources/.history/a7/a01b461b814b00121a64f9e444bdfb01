@@ -1,0 +1,275 @@
+package market;
+
+import java.io.IOException;
+
+import agents.Generator;
+import agents.Retailer;
+import agents.Transmitter;
+import ilog.concert.*;
+import ilog.cplex.*;
+
+public class FtrMain {
+
+	// Constructor vacío
+	public FtrMain(){}
+	
+	public void start() throws IOException{
+		
+		// Generadores
+		Generator genco1 = new Generator("GENCO1");
+		Generator genco2 = new Generator("GENCO2");
+		Generator genco3 = new Generator("GENCO3");
+		//Generator gen4 = new Generator("GENCO4");
+		//Generator gen5 = new Generator("GENCO5");
+		//Generator gen6 = new Generator("GENCO6");
+		//Generator gen7 = new Generator("GENCO7");
+		//Generator gen8 = new Generator("GENCO8");
+		
+		// Comercializadores
+		Retailer retailco1 = new Retailer("RETAILER1",1);
+		Retailer retailco2 = new Retailer("RETAILER2",2);
+		Retailer retailco3 = new Retailer("RETAILER3",3);
+		//Retailer ret4 = new Retailer("RETAILER4");
+		//Retailer ret5 = new Retailer("RETAILER5");
+		//Retailer ret6 = new Retailer("RETAILER6");
+		//Retailer ret7 = new Retailer("RETAILER7");
+		//Retailer ret8 = new Retailer("RETAILER8");
+			
+		// Transmisores
+		Transmitter gridco1 = new Transmitter("GRIDCO1");
+		Transmitter gridco2 = new Transmitter("GRIDCO2");
+		Transmitter gridco3 = new Transmitter("GRIDCO3");
+		//Transmitter trans4 = new Transmitter("GRIDCO4");
+		//Transmitter trans5 = new Transmitter("GRIDCO5");
+		//Transmitter trans6 = new Transmitter("GRIDCO6");
+		//Transmitter trans7 = new Transmitter("GRIDCO7");
+		//Transmitter trans8 = new Transmitter("GRIDCO8");
+		
+		// Unidades de generación
+		// Constructor con id, nombre, nodo, capacidad efectiva, costo de generación
+		GenerationUnit unit1 = new GenerationUnit(1,"U1",1,140,7.5);
+		GenerationUnit unit2 = new GenerationUnit(2,"U2",1,285,6.0);
+		GenerationUnit unit3 = new GenerationUnit(3,"U3",2,90,14.0);
+		GenerationUnit unit4 = new GenerationUnit(4,"U4",3,85,10.0);
+		
+		// Líneas de transmisión
+		TransmissionLine line1 = new TransmissionLine(1,gridco1,1,2,5,126);	// nodo 1 - nodo 2
+		TransmissionLine line2 = new TransmissionLine(2,gridco2,1,3,5,250);	// nodo 1 - nodo 3
+		TransmissionLine line3 = new TransmissionLine(3,gridco3,2,3,10,130); // nodo 2 - nodo 3
+		
+		// generation contracts
+		GenerationContract contractG2U2R1 = new GenerationContract("C1",genco2,unit2,retailco1,
+				new double[]{50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0},
+				new double[]{4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,},
+				1,1,1,365);
+		GenerationContract contractG2U2R3 = new GenerationContract("C2",genco2,unit2,retailco3,
+				new double[]{160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0},
+				new double[]{5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0},
+				1,3,1,365);
+		GenerationContract contractG2U2R2 = new GenerationContract("C3",genco2,unit2,retailco2,
+				new double[]{60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0},
+				new double[]{5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5},
+				1,2,1,365);
+		GenerationContract contractG1U1R3 = new GenerationContract("C4",genco1,unit1,retailco3,
+				new double[]{120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0},
+				new double[]{6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5},
+				1,3,1,365);
+		/*.....................................................................................................................
+		 *  Data
+		 ..................................................................................................................*/
+		
+		double[] angleLb	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+							   	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+							   	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		double[] angleUb    = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360};
+		double[] unservedLb	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		   						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		   						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		double[] unservedUb = {Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, 
+								Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, 
+								Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, 
+								Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, 
+								Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, 
+								Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE,};
+		double [] lowPowerLimit = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+									0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		double [] unsDemandCost = {15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 
+									15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 
+									15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0};
+		
+		double [] susceptance = {5,5,10};
+		double [] powerLimit = {126,250,130};
+		
+		//double [] susceptance 			= operator.getSusceptances();		// susceptances of all lines
+		//double [] powerLimit 			= operator.getPowerFlowLimits();	// power flows limits of all lines
+		double [][] powerDemandVector   = new double[Global.nNodes][24];	// matrix of demand by hour by node
+		double [] dailyPowerBid			= new double[24*Global.nUnits];		// daily offer of price all generators
+		double [] powerBidPrice			= new double[24*Global.nUnits];		// daily offer of power of all generators for each hour
+		
+		// result of dispatch process
+		double [] generation	 = new double[24*Global.nUnits];	// hourly programmed generation
+		double [] nodalPrices	 = new double[24*Global.nNodes];
+		double [] unservedDemand = new double[24*Global.nNodes];	// hourly unserved demand
+		double [] flows 		 = new double[24*Global.nLines];	// flow of power by line by hour
+		double dispatchCost		= 0.0;						// cost value of daily dispatch
+				
+		ArrayFactory array 			= new ArrayFactory();
+		double [] unitCosts 		= {7.5,6.0,14.0,10.0}; 
+		//double [] unitCosts 		= operator.getGenerationCosts();
+		double [][] unitCostMatrix 	= array.repMat(unitCosts,4,24);
+		double [] generationCost 	= array.mat2vec(unitCostMatrix,4,24);
+		
+		//data.printVector(generationCost);
+		
+		/*..... ................................................................................................................
+		 *  String for the variables of optimization problem
+		 .....................................................................................................................*/
+		
+		String[] powergen 	= {"x1_1", "x1_2", "x1_3", "x1_4", "x1_5", "x1_6", "x1_7", "x1_8", "x1_9", "x1_10", "x1_11", "x1_12",
+				   "x1_13", "x1_14", "x1_15", "x1_16", "x1_17", "x1_18", "x1_19", "x1_20", "x1_21", "x1_22", "x1_23", "x1_24",
+				   "x2_1", "x2_2", "x2_3", "x2_4", "x2_5", "x2_6", "x2_7", "x2_8", "x2_9", "x2_10", "x2_11", "x2_12",
+				   "x2_13", "x2_14", "x2_15", "x2_16", "x2_17", "x2_18", "x2_19", "x2_20", "x2_21", "x2_22", "x2_23", "x2_24",
+				   "x3_1", "x3_2", "x3_3", "x3_4", "x3_5", "x3_6", "x3_7", "x3_8", "x3_9", "x3_10", "x3_11", "x3_12",
+				   "x3_13", "x3_14", "x3_15", "x3_16", "x3_17", "x3_18", "x3_19", "x3_20", "x3_21", "x3_22", "x3_23", "x3_24",
+				   "x4_1", "x4_2", "x4_3", "x4_4", "x4_5", "x4_6", "x4_7", "x4_8", "x4_9", "x4_10", "x4_11", "x4_12",
+				   "x4_13", "x4_14", "x4_15", "x4_16", "x4_17", "x4_18", "x4_19", "x4_20", "x4_21", "x4_22", "x4_23", "x4_24"};
+
+		String[] anglevol 	= {"y1_1", "y1_2", "y1_3", "y1_4", "y1_5", "y1_6", "y1_7", "y1_8", "y1_9", "y1_10", "y1_11", "y1_12",
+	   			   "y1_13", "y1_14", "y1_15", "y1_16", "y1_17", "y1_18", "y1_19", "y1_20", "y1_21", "y1_22", "y1_23", "y1_24",
+	   			   "y2_1", "y2_2", "y2_3", "y2_4", "y2_5", "y2_6", "y2_7", "y2_8", "y2_9", "y2_10", "y2_11", "y2_12",
+	   			   "y2_13", "y2_14", "y2_15", "y2_16", "y2_17", "y2_18", "y2_19", "y2_20", "y2_21", "y2_22", "y2_23", "y2_24",
+	   			   "y3_1", "y3_2", "y3_3", "y3_4", "y3_5", "y3_6", "y3_7", "y3_8", "y3_9", "y3_10", "y3_11", "y3_12",
+	   			   "y3_13", "y3_14", "y3_15", "y3_16", "y3_17", "y3_18", "y3_19", "y3_20", "y3_21", "y3_22", "y3_23", "y3_24"};	
+		
+		String[] unserved 	= {"u1_1", "u1_2", "u1_3", "u1_4", "u1_5", "u1_6", "u1_7", "u1_8", "u1_9", "u1_10", "u1_11", "u1_12",
+	   			   "u1_13", "u1_14", "u1_15", "u1_16", "u1_17", "u1_18", "u1_19", "u1_20", "u1_21", "u1_22", "u1_23", "u1_24",
+	   			   "u2_1", "u2_2", "u2_3", "u2_4", "u2_5", "u2_6", "u2_7", "u2_8", "u2_9", "u2_10", "u2_11", "u2_12",
+	   			   "u2_13", "u2_14", "u2_15", "u2_16", "u2_17", "u2_18", "u2_19", "u2_20", "u2_21", "u2_22", "u2_23", "u2_24",
+	   			   "u3_1", "u3_2", "u3_3", "u3_4", "u3_5", "u3_6", "u3_7", "u3_8", "u3_9", "u3_10", "u3_11", "u3_12",
+	   			   "u3_13", "u3_14", "u3_15", "u3_16", "u3_17", "u3_18", "u3_19", "u3_20", "u3_21", "u3_22", "u3_23", "u3_24"};	
+		try{
+			/*.....................................................................................................................
+			 *  Dispatch 
+			 .....................................................................................................................*/
+			
+			// matrix of variables	
+			IloNumVar[][] varI = new IloNumVar[3][]; 
+			IloNumVar[][] varR = new IloNumVar[3][]; 
+			
+			// matrix to save the constraints of ideal dispatch problem
+			IloRange[][]  rngI = new IloRange[1][];
+			rngI[0] = new IloRange[72];
+			
+			// matrix to save the constraints of real dispatch problem
+			IloRange[][]  rngR = new IloRange[2][];
+	        rngR[0] = new IloRange[72];
+			rngR[1] = new IloRange[144];
+	        
+			/*.....................................................................................................................
+			 *  Open the file to read data and writhe the results. 
+			 .....................................................................................................................*/
+			
+			Workbook workbookDemand = Workbook.getWorkbook(new File(fileDemand));
+			Sheet sheetDemand	= workbookDemand.getSheet(sheetDemandS);
+			
+			String fileCsv 	= "F:/RepastModels/SBAs/repastModels/newMarketModel/newModelFtrs/demanda.csv";
+			CsvReader reader = new CsvReader(fileCsv);
+			double [][] demand = Global.rw.readCsv(reader, 365, 168);
+			
+			//Workbook workbookSupply = Workbook.getWorkbook(new File(fileSupply));
+			//Sheet sheetSupply	= workbookSupply.getSheet(sheetSupplyS);
+			
+			Workbook target_workbook = Workbook.getWorkbook(new File(fileReal));
+	        WritableWorkbook workbook = Workbook.createWorkbook(new File(fileReal), target_workbook);
+	        target_workbook.close();
+	        WritableSheet sheetPgI = workbook.getSheet(sheetPowergenIS);
+	        WritableSheet sheetPrI = workbook.getSheet(sheetPricesIS);
+	        WritableSheet sheetFlI = workbook.getSheet(sheetFlowsIS);
+	        WritableSheet sheetDeI = workbook.getSheet(sheetDemandIS);
+	        
+	        WritableSheet sheetPgR = workbook.getSheet(sheetPowergenRS);
+	        WritableSheet sheetPrR = workbook.getSheet(sheetPricesRS);
+	        WritableSheet sheetFlR = workbook.getSheet(sheetFlowsRS);
+	        WritableSheet sheetDeR = workbook.getSheet(sheetDemandRS);
+	        WritableSheet sheetConG = workbook.getSheet(sheetGenContractSetS);
+	        WritableSheet sheetConD = workbook.getSheet(sheetDemContractSetS);
+	        WritableSheet sheetPurGN = workbook.getSheet(nSheetGenPoolPurSetS);
+	        WritableSheet sheetSalGN = workbook.getSheet(nSheetGenPoolSalSetS);
+	        WritableSheet sheetPurDN = workbook.getSheet(nSheetDemPoolPurSetS);
+	        WritableSheet sheetConGN = workbook.getSheet(nSheetGenCongestS);
+	        WritableSheet sheetConDN = workbook.getSheet(nSheetDemCongestS);
+	        WritableSheet sheetTraSN = workbook.getSheet(nSheetTransSetS);
+	        /*WritableSheet sheetPurGUN = workbook.getSheet(unSheetGenPoolPurSetS);
+	        WritableSheet sheetSalGUN = workbook.getSheet(unSheetGenPoolSalSetS);
+	        WritableSheet sheetPurDUN = workbook.getSheet(unSheetDemPoolPurSetS);
+	        WritableSheet sheetTraSUN = workbook.getSheet(unSheetTransSetS);*/
+	                    
+	        WritableSheet sheetSupply = workbook.getSheet(sheetSupplyS);
+			
+	        // for each iteration in the simulation time
+			for (int iteration = 0; iteration < Global.horizon; iteration++){
+				// charge the power demand data by node by day
+				/*operator.management(iteration, varI, varR, rngI, rngR, powergen, anglevol, 
+						unserved, Global.nUnits, Global.nNodes, Global.nLines, data2, data1, lowPowerLimit, dailyPowerBid,
+						powerBidPrice, unsDemandCost, powerDemandVector, susceptance,
+						powerLimit, generation, nodalPrices, flows, unservedDemand, dispatchCost, 
+						angleLb, angleUb, unservedLb, unservedUb, 
+						sheetPgI, sheetPrI, sheetFlI, sheetDeI, sheetPgR, sheetPrR, sheetFlR,
+						sheetDeR, sheetSupply, sheetDemand, sheetConG, sheetPurGN,  sheetSalGN,
+						sheetConD, sheetPurDN, sheetTraSN, sheetPurGUN, sheetSalGUN, 
+						sheetPurDUN, sheetTraSUN, factory);*/
+				
+				/*operator.management(iteration, varI, varR, rngI, rngR, powergen, anglevol, 
+						unserved, Global.nUnits, Global.nNodes, Global.nLines, Global.rw, data1, lowPowerLimit, dailyPowerBid,
+						powerBidPrice, unsDemandCost, powerDemandVector, susceptance,
+						powerLimit, generation, nodalPrices, flows, unservedDemand, dispatchCost, 
+						angleLb, angleUb, unservedLb, unservedUb, 
+						sheetPgI, sheetPrI, sheetFlI, sheetDeI, sheetPgR, sheetPrR, sheetFlR,
+						sheetDeR, sheetSupply, sheetDemand, sheetConG, sheetPurGN,  sheetSalGN,
+						sheetConD, sheetPurDN, sheetTraSN, sheetConGN, sheetConDN, factory);*/
+				
+				operator.management(iteration, varI, varR, rngI, rngR, powergen, anglevol, 
+						unserved, Global.nUnits, Global.nNodes, Global.nLines, Global.rw, data1, lowPowerLimit, dailyPowerBid,
+						powerBidPrice, unsDemandCost, powerDemandVector, susceptance,
+						powerLimit, generation, nodalPrices, flows, unservedDemand, dispatchCost, 
+						angleLb, angleUb, unservedLb, unservedUb, 
+						sheetPgI, sheetPrI, sheetFlI, sheetDeI, sheetPgR, sheetPrR, sheetFlR,
+						sheetDeR, sheetSupply, demand, sheetConG, sheetPurGN,  sheetSalGN,
+						sheetConD, sheetPurDN, sheetTraSN, sheetConGN, sheetConDN, factory);
+				
+				/* ideal dispatch solution
+				idealDispatch.dispatch(varI, rngI, powergen, anglevol, unserved, iteration, units, nodes, lines, data, 
+	    				lowPowerLimit, dailyPowerBid, powerBidPrice, unsDemandCost, powerDemandVector, susceptance, powerLimit, flows, 
+	    				angleLb, angleUb, unservedLb, unservedUb, sheetPgI, sheetPrI, sheetFlI, sheetDeI);
+				// real dispatch solution
+				realDispatch.dispatch(varR, rngR, powergen, anglevol, unserved, iteration, units, nodes, lines, data, 
+	        			lowPowerLimit, dailyPowerBid, powerBidPrice, unsDemandCost, powerDemandVector, susceptance, powerLimit, flows,
+	        			angleLb, angleUb, unservedLb, unservedUb, sheetPgR, sheetPrR, sheetFlR, sheetDeR);
+				*/System.gc();
+			}
+			
+	      	workbook.write();
+			workbook.close();
+			workbookDemand.close();
+		}
+		catch(Exception e)
+	    {
+	        System.out.println("Exception ->"+e);
+	    }
+	}
+
+	
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		FtrMain um = new FtrMain();
+		um.start();
+
+	}
+
+}

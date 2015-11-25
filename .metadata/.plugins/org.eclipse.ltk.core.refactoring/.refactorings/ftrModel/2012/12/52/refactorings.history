@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename compilation unit &apos;market.ReadWirite.java&apos; to &apos;ReadWrite.java&apos;&#x0D;&#x0A;- Original project: &apos;ftrModel&apos;&#x0D;&#x0A;- Original element: &apos;market.ReadWirite.java&apos;&#x0D;&#x0A;- Renamed element: &apos;market.ReadWrite.java&apos;" description="Rename compilation unit &apos;ReadWirite.java&apos;" flags="2" id="org.eclipse.jdt.ui.rename.compilationunit" input="/src&lt;market{ReadWirite.java" name="ReadWrite.java" references="false" stamp="1356032585542" version="1.0"/>
+</session>

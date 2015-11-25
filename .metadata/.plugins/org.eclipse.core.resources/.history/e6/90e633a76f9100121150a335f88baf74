@@ -1,0 +1,947 @@
+package market;
+
+import java.io.IOException;
+
+import org.jfree.data.xy.XYSeries;
+import org.jfree.date.DateUtilities;
+
+import com.csvreader.CsvWriter;
+
+import agents.Operator;
+//import jxl.write.WritableSheet;
+
+import ilog.concert.*;
+import ilog.cplex.*;
+
+public class DailyRealDispatch {
+	
+	//
+	// Función para obtener la solución del problema de optimización del despacho
+	// Parámetros: array de variables, array de restricciones, strings para la primera, segunda y tercera variable 
+	// de optimización (generación, ángulos de voltaje y demanda no atendida respectivamente), número de iteración,
+	// número de unidades de generación, número de nodos, número de líneas de transmisión, parámetro para las funciones de lectura
+	// y escritura, vectores para el límte de generación, las ofertas de potencia y energía, el costo de la demanda no atendida, la
+	// demanda, la susceptancia, el limite de flujo de potencia, los flujos por las líneas, los límites inferior y superior para los 
+	// ángulos de voltaje y la demanda no atendida, además de parámetros para acceder a las funciones de Operador y ArrayFactory. 
+	//
+	public static Dispatch dispatch(IloNumVar[][] var, IloRange[][]  rng, String[] var1, String[] var2, String[] var3,
+			int iteration, double [] lowPowerLimit, double [][] powerBid, 
+			double [][] powerBidPrice, double [] unsDemandCost, double [][] powerDemandVector, double [] susceptance, 
+			double [] powerLimit, double[] flows, double [] angleLb, double [] angleUb, double [] unservedLb, 
+			double [] unservedUb, Operator operator, CsvWriter writer) throws NumberFormatException, IOException
+	{
+	try {
+			// Create the modeler/solver object
+	        IloCplex cplex = new IloCplex(); 
+	        
+	        // Establecer los parámetros de la optimización [OPCIONAL]
+	        //cplex.setParam(IloCplex.IntParam.RootAlg, IloCplex.Algorithm.Auto);
+
+	        //
+	        // Obtención d ela solución del despacho
+	        //
+	        populateByRow(cplex, var, rng, var1, var2, var3, lowPowerLimit,
+	        		Global.factory.mat2vec(powerBid,Global.nUnits,24), Global.factory.mat2vec(powerBidPrice,Global.nUnits,24),
+	        		unsDemandCost, powerDemandVector, susceptance, powerLimit, angleLb, angleUb, unservedLb, unservedUb);
+	         
+	        // Escribir el problema de optimización en un archivo .txt
+	        cplex.exportModel("realDispatch.lp");
+	         
+	        // Si hay solución entonces mostrar los resultados
+	        if ( cplex.solve() ) {
+	        	
+	        	//
+	        	// Resutados de la optimización
+	        	//
+	        	operator.getRealDispatch().setDispatchCost(cplex.getObjValue()); // valor de la función objetivo
+	        	operator.getRealDispatch().setGeneration(Global.factory.vec2mat(cplex.getValues(var[0]),Global.nUnits,24)); // generación por unidad por hora
+	        	operator.getRealDispatch().setVoltajeAngles(Global.factory.vec2mat(cplex.getValues(var[1]),Global.nNodes,24)); // ángulo de voltaje por nodo por hora
+	        	operator.getRealDispatch().setUnservedDemand(Global.factory.vec2mat(cplex.getValues(var[2]),Global.nNodes,24)); // demanda no atendida por nodo por hora
+	        	operator.getRealDispatch().setNodalPrices(Global.factory.vec2mat(cplex.getDuals(rng[0]),Global.nNodes,24)); // valores de los precios duales
+	        	
+	        	// Otras variabes obtenidas de la optimización
+	        	//double[] y      = cplex.getValues(var[1]);		// voltage angle by node
+	        	//double[] dj1    = cplex.getReducedCosts(var[0]);	// reduced costs
+	        	//double[] dj2    = cplex.getReducedCosts(var[1]);	// reduced costs
+	        	//double[] dj3    = cplex.getReducedCosts(var[2]);	// reduced costs
+	        	//double[] dual1  = cplex.getDuals(rng[0]);		// values of dual prices
+	        	//double[] dual2  = cplex.getDuals(rng[1]);		// values of dual prices
+	        	//double[] slack1 = cplex.getSlacks(rng[0]);		// slacks
+	
+	        	 //
+	            // Estructuración del vector de flujos de potencia por las líneas de transmisión
+	            //
+	            double[] y = cplex.getValues(var[1]);
+	            for (int i = 0; i < 24; ++i) {
+		              flows[0 + i]		= susceptance[0]*y[0+i] - susceptance[0]*y[192 + i]; 		// 0	L1	0	ANTIOQUI	192	CQR
+		              flows[24 + i]		= susceptance[1]*y[0+i] - susceptance[1]*y[384 + i];		// 1	L2	0	ANTIOQUI	384	SANCARLO
+		              flows[48 + i]		= susceptance[2]*y[0+i] - susceptance[2]*y[288 + i];		// 2	L3	0	ANTIOQUI	288	MAGDAMED
+		              flows[72 + i]		= susceptance[3]*y[24+i] - susceptance[3]*y[168 + i];		// 3	L4	24	ATLANTIC	168	CORDOSUC
+		              flows[96 + i]		= susceptance[4]*y[48+i] - susceptance[4]*y[288 + i];		// 4	L5	48	BOGOTA		288	MAGDAMED
+		              flows[120 + i]	= susceptance[5]*y[48+i] - susceptance[5]*y[312 + i];		// 5	L6	48	BOGOTA		312	META
+		              flows[144 + i]	= susceptance[6]*y[72+i] - susceptance[6]*y[24 + i];		// 6	L7	72	BOLIVAR		24	ATLANTIC
+		              flows[168 + i]	= susceptance[7]*y[72+i] - susceptance[7]*y[216 + i];		// 7	L8	72	BOLIVAR		216	GCM
+		              flows[192 + i]	= susceptance[8]*y[96+i] - susceptance[8]*y[504 + i];		// 8	L9	96	CAUCANAR	504	ECUADOR
+		              flows[216 + i]	= susceptance[9]*y[120+i] - susceptance[9]*y[288 + i];		// 9	L10	120	CERROMAT	288	MAGDAMED
+		              flows[240 + i]	= susceptance[10]*y[120+i] - susceptance[10]*y[0 + i];		// 10	L11	120	CERROMAT	0	ANTIOQUI
+		              flows[264 + i]	= susceptance[11]*y[144+i] - susceptance[11]*y[48 + i];		// 11	L12	144	CHIVOR		48	BOGOTA
+		              flows[288 + i]	= susceptance[12]*y[144+i] - susceptance[12]*y[336 + i];	// 12	L13	144	CHIVOR		336	NORDESTE
+		              flows[312 + i]	= susceptance[13]*y[168+i] - susceptance[13]*y[120 + i];	// 13	L14	168	CORDOSUC	120	CERROMAT
+		              flows[336 + i]	= susceptance[14]*y[192+i] - susceptance[14]*y[408 + i];	// 14	L15	192	CQR			408	TOLIMA
+		              flows[360 + i]	= susceptance[15]*y[192+i] - susceptance[15]*y[432 + i];	// 15	L16	192	CQR			432	VALLECAU
+		              flows[384 + i]	= susceptance[16]*y[216+i] - susceptance[16]*y[24 + i];		// 16	L17	216	GCM			24	ATLANTIC
+		              flows[408 + i]	= susceptance[17]*y[216+i] - susceptance[17]*y[336 + i];	// 17	L18	216	GCM			336	NORDESTE
+		              flows[432 + i]	= susceptance[18]*y[216+i] - susceptance[18]*y[480 + i];	// 18	L19	216	GCM			480	CUATRICENTENARIO
+		              flows[456 + i]	= susceptance[19]*y[240+i] - susceptance[19]*y[96 + i];		// 19	L20	240	HUILACAQ	96	CAUCANAR
+		              flows[480 + i]	= susceptance[20]*y[240+i] - susceptance[20]*y[408 + i];	// 20	L21	240	HUILACAQ	408	TOLIMA
+		              flows[504 + i]	= susceptance[21]*y[264+i] - susceptance[21]*y[48 + i];		// 21	L22	264	LAMIEL		48	BOGOTA
+		              flows[528 + i]	= susceptance[22]*y[264+i] - susceptance[22]*y[408 + i];	// 22	L23	264	LAMIEL		408	TOLIMA
+		              flows[552 + i]	= susceptance[23]*y[288+i] - susceptance[23]*y[384 + i];	// 23	L24	288	MAGDAMED	384	SANCARLO
+		              flows[576 + i]	= susceptance[24]*y[288+i] - susceptance[24]*y[336 + i];	// 24	L25	288	MAGDAMED	336	NORDESTE
+		              flows[600 + i]	= susceptance[25]*y[336+i] - susceptance[25]*y[456 + i];	// 25	L26	336	NORDESTE	456	COROZO
+		              flows[624 + i]	= susceptance[26]*y[360+i] - susceptance[26]*y[48 + i];		// 26	L27	360	PAGUA		48	BOGOTA
+		              flows[648 + i]	= susceptance[27]*y[384+i] - susceptance[27]*y[48 + i];		// 27	L28	384	SANCARLO	48	BOGOTA
+		              flows[672 + i]	= susceptance[28]*y[384+i] - susceptance[28]*y[192 + i];	// 28	L29	384	SANCARLO	192	CQR
+		              flows[696 + i]	= susceptance[29]*y[384+i] - susceptance[29]*y[432 + i];	// 29	L30	384	SANCARLO	432	VALLECAU
+		              flows[720 + i]	= susceptance[30]*y[408+i] - susceptance[30]*y[48 + i];		// 30	L31	408	TOLIMA		48	BOGOTA
+		              flows[744 + i]	= susceptance[31]*y[432+i] - susceptance[31]*y[96 + i];		// 31	L32	432	VALLECAU	96	CAUCANAR
+		              
+	            }
+	            
+	            //
+	            // Cálculo de la capacidad remanente
+	            //	           
+	            double [][] differences = new double[Global.nLines][24];
+	            for (int i = 0; i < Global.nLines; i++)
+	            {
+	            	for (int h = 0; h < 24; h++)
+	            	{
+	            		differences[i][h] = powerLimit[i]-Math.abs(Global.factory.vec2mat(flows,Global.nLines,24)[i][h]);
+	            	}
+	            }
+	            
+	            //
+	            // Resultados adicionales
+	            //
+	            operator.getRealDispatch().setFlows(Global.factory.vec2mat(flows,Global.nLines,24)); // flujos por las líneas de transmisión para cada hora
+	            operator.getRealDispatch().setRemainderCapacity(differences); // capacidad de transmisión remanente en cada línea en cada hora
+	           
+	        	//
+	            // Imprimir los resultados un archivo .csv [estilo consola]
+	            //
+	            Global.rw.printResultsCsv(iteration, operator.getRealDispatch(), Global.resultsWriter);
+	            
+	            //
+	            // Escritura de los reultados en uen archivo .csv
+	            //
+	            Global.rw.writeCsv(iteration, writer, operator.getRealDispatch());
+	            
+	            Global.dataset.removeAllSeries();
+	            XYSeries series; 
+	            //series.clear();
+	            for(int n = 0; n < Global.nNodes; n++)
+	            {
+	            	series = new XYSeries(Global.nodesNames[n],false, true);
+		            for(int h = 0; h<24; h++){
+		            	//series.add(DateUtilities.createDate(2010, 1, 1, h+1, 0).getTime(),operator.getIdealDispatch().getNodalPrices()[n][h]);
+		            	series.add(h,operator.getRealDispatch().getNodalPrices()[n][h]);
+		            }
+		            Global.dataset.addSeries(series);
+	            }
+	            
+	           //Global.dataset.addSeries(series);
+	           Global.stepGraphic.setDataset(Global.dataset);
+	        }
+	        else {
+	        	System.out.println("El problema de optimización no tiene solución");
+	        }
+	        // Cerrar el bloque Cplex
+	        cplex.end();
+	     }
+	     catch (IloException e) {
+	        System.err.println("Real dispatch: concert exception '" + e + "' caught");
+	     }
+	// Retorna un objeto con los vectores de los resultados
+	return operator.getRealDispatch();
+	}
+	
+	/*---------------------------------------------------------------------------------------------------------------
+	 *  Structure of the optimization problem
+	 *---------------------------------------------------------------------------------------------------------------*/
+	
+	static void populateByRow(IloMPModeler model, IloNumVar[][] var, IloRange[][] rng, String[] var1, String[] var2, String[] var3, 
+			double [] lowPowerLimit, double [] powerBid, double [] powerBidPrice, double [] unsDemandCost, 
+			double [][] powerDemandVector, 	double [] susceptance, double [] powerLimit, double [] angleLb, 
+			double [] angleUb, double [] unservedLb, double [] unservedUb) throws IloException {
+		
+		// Variables  --------------------------------------------------------------------------------
+		IloNumVar[] generation  = model.numVarArray(24*Global.nUnits, lowPowerLimit, powerBid, var1); // programación de la generación 
+		IloNumVar[] angle       = model.numVarArray(24*Global.nNodes, angleLb, angleUb, var2); // ángulos de voltaje
+		IloNumVar[] unserved    = model.numVarArray(24*Global.nNodes, unservedLb, unservedUb, var3); // demanda no atendida
+		var[0] = generation; // programación de la genración
+		var[1] = angle; // ángulos de voltaje
+		var[2] = unserved; // demanda no atendida
+		
+		//
+		// Función objetivo
+		//
+		// Minimizar el costo de la generación
+		//model.addMinimize(model.scalProd(generation, generationCost));
+		// Minimizar el costo de la genración y de la demanda no atendida
+		model.addMinimize(model.sum(model.scalProd(generation, powerBidPrice), model.scalProd(unserved, unsDemandCost)));
+		
+		//
+		// Restricciones --------------------------------------------------------------------------------
+		//
+		//
+		// Restricciones  --------------------------------------------------------------------------------
+		//
+		
+		/* Balance oferta y demanda ANTIOQUI
+
+		31	GUATAPE		ANTIOQUI	720
+		32	GUATRON		ANTIOQUI	744
+		35	JAGUAS		ANTIOQUI	816
+		36	LATASAJERA	ANTIOQUI	840
+		37	MAGUAFRE	ANTIOQUI	864
+		38	MANTIOQ1	ANTIOQUI	888
+		41	MCALDERAS	ANTIOQUI	960
+		42	MCARUQUIA	ANTIOQUI	984
+		43	MCASCADA1	ANTIOQUI	1008
+		53	MGUANAQUITA	ANTIOQUI	1248
+		64	MSANTARITA	ANTIOQUI	1512
+		65	MSANTIAGO	ANTIOQUI	1536
+		78	PLAYAS		ANTIOQUI	1848
+		79	PORCE2		ANTIOQUI	1872
+		80	PORCE3		ANTIOQUI	1896
+		81	PORCE3P		ANTIOQUI	1920
+		85	RPIEDRAS	ANTIOQUI	2016
+		
+		0	L1	ANTIOQUI	CQR			460.00	6.93	0
+		1	L2	ANTIOQUI	SANCARLO	1930.00	19.05	24
+		2	L3	ANTIOQUI	MAGDAMED	402.50	6.78	48
+		10	L11	CERROMAT	ANTIOQUI	952.50	5.13	240
+		 */
+		
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[720+i], 
+					generation[744+i], 
+					generation[816+i], 
+					generation[840+i], 
+					generation[864+i], 
+					generation[888+i], 
+					generation[960+i], 
+					generation[984+i], 
+					generation[1008+i],
+					generation[1248+i],
+					generation[1512+i],
+					generation[1536+i],
+					generation[1848+i],
+					generation[1872+i],
+					generation[1896+i],
+					generation[1920+i],
+					generation[2016+i],					
+					unserved[0+i],
+					// (SUS[ANT-CQR] + SUS[ANT-SCA] + SUS[ANT-MAG] + SUS[CER-ANT]) * VA_ANTIOQUI
+					model.prod(susceptance[0] + susceptance[1] + susceptance[2] + susceptance[10], angle[0+i]),
+					model.prod(-susceptance[0], angle[192+i]), 	// SUS[ANT-CQR]	* VA_CQR
+					model.prod(-susceptance[1], angle[384+i]),	// SUS[ANT-SCA]	* VA_SANCARLO
+					model.prod(-susceptance[2], angle[288+i]), 	// SUS[ANT-MAG]	* VA_MAGDAMED
+					model.prod(-susceptance[10], angle[120+i])};	// SUS[CER-ANT]	* VA_CERROMAT 	
+			
+			rng[0][0+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[0][i], "C_ANTIOQUI_"+i); 			//  DEM[CARIBE2]
+		}
+		
+		
+		/* Balance oferta y demanda ATLANTIC
+		2	BARRANQ3	ATLANTIC	24
+		3	BARRANQ4	ATLANTIC	48
+		24	FLORES1		ATLANTIC	552
+		25	FLORES21	ATLANTIC	576
+		26	FLORES3		ATLANTIC	600
+		27	FLORESIVB	ATLANTIC	624
+		93	TEBSA		ATLANTIC	2208
+		
+		3	L4	ATLANTIC	CORDOSUC	2437.50	10.07	72
+		6	L7	BOLIVAR		ATLANTIC	481.58	10.03	144
+		16	L17	GCM			ATLANTIC	544.50	10.25	384
+		 */
+		
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[24+i], 
+					generation[48+i], 
+					generation[552+i], 
+					generation[576+i], 
+					generation[600+i],
+					generation[624+i],
+					generation[2208+i],					
+					unserved[24+i],
+					// (SUS[ATL-CDS] + SUS[BOL-ATL] + SUS[GCM-ATL]) * VA_ATLANTIC
+					model.prod(susceptance[3] + susceptance[6]  + susceptance[16], angle[24+i]),
+					model.prod(-susceptance[3], angle[168+i]),		// SUS[ATL-CDS]	* VA_CORDOSUC
+					model.prod(-susceptance[6], angle[72+i]),		// SUS[BOL-ATL] * VA_BOLIVAR
+					model.prod(-susceptance[16], angle[216+i])};	// SUS[GCM-ATL] * VA_GCM
+			
+			rng[0][24+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[1][i], "C_ATLANTIC_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda BOGOTÁ
+		33	GUAVIO			BOGOTA	768
+		40	MBOGOTA1		BOGOTA	936
+		48	MCUNDINAMARCA	BOGOTA	1128
+		63	MSANTANA		BOGOTA	1488
+		101	ZIPAEMG2		BOGOTA	2400
+		102	ZIPAEMG3		BOGOTA	2424
+		103	ZIPAEMG4		BOGOTA	2448
+		104	ZIPAEMG5		BOGOTA	2472
+		
+		4	L5	BOGOTA		MAGDAMED	1405.14	11.77	96
+		5	L6	BOGOTA		META		552.00	9.10	120
+		11	L12	CHIVOR		BOGOTA		911.26	13.72	264
+		21	L22	LAMIEL		BOGOTA		454.48	6.93	504
+		26	L27	PAGUA		BOGOTA		956.80	13.91	624
+		27	L28	SANCARLO	BOGOTA		445.28	6.97	648
+		30	L31	TOLIMA		BOGOTA		882.28	13.86	720
+		 */
+		
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[768+i],
+					generation[936+i], 
+					generation[1128+i], 
+					generation[1488+i], 
+					generation[2400+i], 
+					generation[2424+i], 
+					generation[2448+i], 
+					generation[2472+i], 
+					unserved[48+i],
+					// (SUS[BOG-MAG] + SUS[BOG-MET] + SUS[CHI-BOG] + SUS[LAM-BOG] + SUS[PAG-BOG] + SUS[SCA-BOG] + SUS[TOL-BOG]) * VA_BOGOTA
+					model.prod(susceptance[4] + susceptance[5] + susceptance[11] + susceptance[21] + susceptance[26] + susceptance[27] + susceptance[30], angle[48+i]),
+					model.prod(-susceptance[4], angle[288+i]),	// SUS[BOG-MAG] * VA_MAGDAMED
+					model.prod(-susceptance[5], angle[312+i]),	// SUS[BOG-MET] * VA_META
+					model.prod(-susceptance[11], angle[144+i]),	// SUS[CHI-BOG] * VA_CHIVOR 
+					model.prod(-susceptance[21], angle[264+i]),	// SUS[LAM-BOG] * VA_LAMIEL
+					model.prod(-susceptance[26], angle[360+i]),	// SUS[PAG-BOG] * VA_PAGUA
+					model.prod(-susceptance[27], angle[384+i]),	// SUS[SCA-BOG] * VA_SANCARLO
+					model.prod(-susceptance[30], angle[408+i])};	// SUS[TOL-BOG] * VA_TOLIMA
+			
+			rng[0][48+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[2][i], "C_BOGOTA_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda BOLIVAR
+		10	CTGEMG1		BOLIVAR	216
+		11	CTGEMG2		BOLIVAR	240
+		12	CTGEMG3		BOLIVAR	264
+		83	PROELEC1	BOLIVAR	1968
+		84	PROELEC2	BOLIVAR	1992
+		90	TCANDEL1	BOLIVAR	2136
+		91	TCANDEL2	BOLIVAR	2160
+		
+		6	L7	BOLIVAR	ATLANTIC	481.58	10.03	144
+		7	L8	BOLIVAR	GCM			952.50	4.91	168
+		 */
+		
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[216+i], 
+					generation[240+i], 
+					generation[264+i], 
+					generation[1968+i], 
+					generation[1992+i], 
+					generation[2136+i], 
+					generation[2160+i], 
+					unserved[72+i],
+					// (SUS[BOL-ATL] + SUS[BOL-GCM]) * VA_BOLIVAR
+					model.prod(susceptance[6] + susceptance[7], angle[72+i]),
+					model.prod(-susceptance[6], angle[24+i]),	// SUS[BOL-ATL] * VA_ATLANTIC
+					model.prod(-susceptance[7], angle[216+i])};	// SUS[BOL-GCM] * VA_GCM
+			
+			rng[0][72+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[3][i], "C_BOLIVAR_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda CAUCANAR
+		7	COINCAUCA	CAUCANAR	144
+		28	FLORIDA2	CAUCANAR	648
+		44	MCAUCAN1	CAUCANAR	1032
+		45	MCAUCAN2	CAUCANAR	1056
+		62	MRIOMAYO	CAUCANAR	1464
+		
+		8	L9	CAUCANAR	ECUADOR		972.90	13.85	192
+		19	L20	HUILACAQ	CAUCANAR	846.40	16.62	456
+		31	L32	VALLECAU	CAUCANAR	461.38	7.00	744
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[144+i], 
+					generation[648+i], 
+					generation[1032+i], 
+					generation[1056+i], 
+					generation[1464+i], 
+					unserved[96+i],
+					// (SUS[CAU-ECU] + SUS[HUI-CAU]+ SUS[VAL-CAU]) * VA_CAUCANAR
+					model.prod(susceptance[8] + susceptance[19]  + susceptance[31], angle[96+i]),
+					model.prod(-susceptance[8], angle[504+i]),		// SUS[CAU-ECU] * VA_ECUADOR
+					model.prod(-susceptance[19], angle[240+i]),		// SUS[HUI-CAU] * VA_HUILACAQ
+					model.prod(-susceptance[31], angle[432+i])};	// SUS[VAL-CAU] * VA_VALLECAU
+			
+			rng[0][96+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[4][i], "C_CAUCANAR_"+i); 
+		}
+		
+		/* Balance oferta y demanda CERROMAT
+		99	URRA	CERROMAT	2352
+		
+		9	L10	CERROMAT	MAGDAMED	1250.00	5.00	216
+		10	L11	CERROMAT	ANTIOQUI	952.50	5.13	240
+		13	L14	CORDOSUC	CERROMAT	2440.00	10.03	312
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[2352+i], 
+					unserved[120+i],
+					// (SUS[CER-MAG] + SUS[CER-ANT]+ SUS[CDS-CER]) * VA_CERROMAT
+					model.prod(susceptance[9] + susceptance[10] + susceptance[13], angle[120+i]),
+					model.prod(-susceptance[9], angle[288+i]),		// SUS[CER-MAG] * VA_MAGDAMED
+					model.prod(-susceptance[10], angle[0+i]),		// SUS[CER-ANT] * VA_ANTIOQUI
+					model.prod(-susceptance[13], angle[168+i])};	// SUS[CDS-CER] * VA_CORDOSUC
+			
+			rng[0][120+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[5][i], "C_CERROMAT_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda CHIVOR
+		6	CHIVOR		CHIVOR	120
+		
+		11	L12	CHIVOR	BOGOTA		911.26	13.72	264
+		12	L13	CHIVOR	NORDESTE	441.60	6.84	288
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[120+i],
+					unserved[144+i],
+					// (SUS[CHI-BOG] + SUS[CHI-NOR]) * VA_CHIVOR
+					model.prod(susceptance[11] + susceptance[12], angle[144+i]),
+					model.prod(-susceptance[11], angle[48+i]),		// SUS[CHI-BOG] * VA_BOGOTA
+					model.prod(-susceptance[12], angle[336+i])};	// SUS[CHI-NOR] * VA_NORDESTE
+			
+			rng[0][144+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[6][i], "C_CHIVOR_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda CORDOSUC
+		No hay oferta
+		
+		13	L14	168	CORDOSUC	120	CERROMAT	2440.00	10.03	312
+		3	L4	24	ATLANTIC	168	CORDOSUC	2437.50	10.07	72
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					unserved[168+i],
+					// (SUS[CDS-CER] + SUS[ATL-CDS]) * VA_CORDOSUC
+					model.prod(susceptance[13] + susceptance[3], angle[168+i]),
+					model.prod(-susceptance[13], angle[120+i]),	// SUS[CDS-CER]
+					model.prod(-susceptance[3], angle[24+i])};	// SUS[ATL-CDS]
+			
+			rng[0][168+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[7][i], "C_CORDOSUC_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda CQR
+		14	DORADA1			CQR	312
+		23	ESMERALDA		CQR	528
+		34	INSULA			CQR	792
+		39	MBELMONTE		CQR	912
+		47	MCQR1			CQR	1104
+		50	MELBOSQUE		CQR	1176
+		59	MNLIBARE		CQR	1392
+		88	SANFRANCISCO	CQR	2088
+		
+		14	L15	192	CQR	408	TOLIMA		390.08	6.98	336
+		15	L16	192	CQR	432	VALLECAU	1143.10	17.33	360
+		0	L1	0	ANTIOQUI	192	CQR	460.00	6.93	0
+		28	L29	384	SANCARLO	192	CQR	446.20	6.88	672
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[312+i],
+					generation[528+i],
+					generation[792+i],
+					generation[912+i],
+					generation[1104+i],
+					generation[1176+i],
+					generation[1392+i],
+					generation[2088+i],
+					unserved[192+i],
+					// (SUS[CQR-TOL] + SUS[CQR-VAL] + SUS[ANT-CQR] + SUS[SCA-CQR]) * VA_CQR
+					model.prod(susceptance[14] + susceptance[15] + susceptance[0] + susceptance[28], angle[192+i]),
+					model.prod(-susceptance[14], angle[408+i]),		// SUS[CQR-TOL] * VA_TOLIMA
+					model.prod(-susceptance[15], angle[432+i]),		// SUS[CQR-VAL] * VA_VALLECAU
+					model.prod(-susceptance[0], angle[0+i]),		// SUS[ANT-CQR] * VA_ANTIOQUI
+					model.prod(-susceptance[28], angle[384+i])};	// SUS[SCA-CQR] * VA_SANCARLO
+			
+			rng[0][192+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[8][i], "C_CQR_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda GCM
+		29	GUAJIR11	GCM	672
+		30	GUAJIR21	GCM	696
+		56	MJEPIRAC	GCM	1320
+		
+		16	L17	216	GCM		24	ATLANTIC			544.50	10.25	384
+		17	L18	216	GCM		336	NORDESTE			952.50	4.91	408
+		18	L19	216	GCM		480	CUATRICENTENARIO	202.86	3.30	432
+		7	L8	72	BOLIVAR	216	GCM					952.50	4.91	168
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[672+i],
+					generation[696+i],
+					generation[1320+i],
+					unserved[216+i],
+					// (SUS[GCM-ATL] + SUS[GCM-NOR] + SUS[GCM-CUA] + SUS[BOL-GCM]) * VA_GCM
+					model.prod(susceptance[16] + susceptance[17]  + susceptance[18]  + susceptance[7], angle[216+i]),
+					model.prod(-susceptance[16], angle[24+i]),	// SUS[GCM-ATL] * VA_ATLANTIC
+					model.prod(-susceptance[17], angle[336+i]),	// SUS[GCM-NOR] * VA_NORDESTE
+					model.prod(-susceptance[18], angle[480+i]),	// SUS[GCM-CUA] * VA_CUATRICENTENARIO
+					model.prod(-susceptance[7], angle[72+i])};	// SUS[BOL-GCM] * VA_BOLIVAR
+			
+			rng[0][216+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[9][i], "C_GCM_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda HUILACAQ
+		4	BETANIA		HUILACAQ	72
+		54	MHUILAQ1	HUILACAQ	1272
+		
+		19	L20	240	HUILACAQ	96	CAUCANAR	846.40	16.62	456
+		20	L21	240	HUILACAQ	408	TOLIMA		205.85	3.41	480
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[72+i],
+					generation[1272+i],
+					unserved[240+i],
+					// (SUS[HUI-CAU] + SUS[HUI-TOL]) * VA_HUILACAQ
+					model.prod(susceptance[19] + susceptance[20], angle[240+i]),
+					model.prod(-susceptance[19], angle[96+i]),		// SUS[HUI-CAU] * VA_CAUCANAR
+					model.prod(-susceptance[20], angle[408+i])};	// SUS[HUI-TOL] * VA_TOLIMA
+			
+			rng[0][240+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[10][i], "C_HUILACAQ_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda LAMIEL
+		55	MIEL1	LAMIEL	1296
+		
+		21	L22	264	LAMIEL	48	BOGOTA	454.48	6.93	504
+		22	L23	264	LAMIEL	408	TOLIMA	458.16	6.94	528
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[1296+i],
+					unserved[264+i],
+					// (SUS[MIE-BOG] + SUS[MIE-TOL]) * VA_LAMIEL
+					model.prod(susceptance[21] + susceptance[22], angle[264+i]),
+					model.prod(-susceptance[21], angle[48+i]),		// SUS[MIE-BOG] * VA_BOGOTA
+					model.prod(-susceptance[22], angle[408+i])};	// SUS[MIE-TOL] * VA_TOLIMA
+			
+			rng[0][264+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[11][i], "C_LAMIEL_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda MAGDAMED
+		92	TCENTRO1	MAGDAMED	2184
+		96	TSIERRA		MAGDAMED	2280
+		
+		23	L24	288	MAGDAMED	384	SANCARLO	1436.76	8.35	552
+		24	L25	288	MAGDAMED	336	NORDESTE	1550.04	14.99	576
+		2	L3	0	ANTIOQUI	288	MAGDAMED	402.50	6.78	48
+		4	L5	48	BOGOTA	288	MAGDAMED	1405.14	11.77	96
+		9	L10	120	CERROMAT	288	MAGDAMED	1250.00	5.00	216
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[2184+i],
+					generation[2280+i],
+					unserved[288+i],
+					// (SUS[MAG-SCA] + SUS[MAG-NOR] + SUS[ANT-MAG] + SUS[BOG-MAG] + SUS[CER-MAG]) * VA_MAGNAMED
+					model.prod(susceptance[23] + susceptance[24] + susceptance[2] + susceptance[4] + susceptance[9], angle[288+i]),
+					model.prod(-susceptance[23], angle[384+i]),	// SUS[MAG-SCA] * VA_SANCARLO
+					model.prod(-susceptance[24], angle[336+i]),	// SUS[MAG-NOR] * VA_NORDESTE
+					model.prod(-susceptance[2], angle[0+i]),	// SUS[ANT-MAG] * VA_ANTIOQUI
+					model.prod(-susceptance[4], angle[48+i]),	// SUS[BOG-MAG] * VA_BOGOTA
+					model.prod(-susceptance[9], angle[120+i])};	// SUS[CER-MAG] * VA_CERROMAT
+			
+			rng[0][288+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[12][i], "C_MAGNAMED_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda META
+		No tiene oferta
+		
+		5	L6	48	BOGOTA	312	META	552.00	9.10	120
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					unserved[312+i],
+					// (SUS[BOG-MET]) * VA_META
+					model.prod(susceptance[5], angle[312+i]),
+					model.prod(-susceptance[5], angle[48+i])};	// SUS[BOG-MET] * VA_BOGOTA
+			
+			rng[0][312+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[13][i], "C_META_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda NORDESTE
+		46	MCIMARR1	NORDESTE	1080
+		52	MERILEC1	NORDESTE	1224
+		57	MMORRO1		NORDESTE	1344
+		58	MMORRO2		NORDESTE	1368
+		60	MNORDE1		NORDESTE	1416
+		69	MYOPAL1		NORDESTE	1632
+		73	PAIPA1		NORDESTE	1728
+		74	PAIPA2		NORDESTE	1752
+		75	PAIPA3		NORDESTE	1776
+		76	PAIPA4		NORDESTE	1800
+		77	PALENQ3		NORDESTE	1824
+		89	TASAJER1	NORDESTE	2112
+		98	TYOPAL2		NORDESTE	2328
+		
+		25	L26	336	NORDESTE	456	COROZO		346.38	9.02	600
+		12	L13	144	CHIVOR		336	NORDESTE	441.60	6.84	288
+		17	L18	216	GCM			336	NORDESTE	952.50	4.91	408
+		24	L25	288	MAGDAMED	336	NORDESTE	1550.04	14.99	576
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[1080+i],
+					generation[1224+i],
+					generation[1344+i],
+					generation[1368+i],
+					generation[1416+i],
+					generation[1632+i],
+					generation[1728+i],
+					generation[1752+i],
+					generation[1776+i],
+					generation[1800+i],
+					generation[1824+i],
+					generation[2112+i],
+					generation[2328+i],
+					unserved[336+i],
+					// (SUS[NOR-COR] + SUS[CHI-NOR] + SUS[GCM-NOR] + SUS[MAG-NOR]) * VA_NORDESTE
+					model.prod(susceptance[25] + susceptance[12] + susceptance[17] + susceptance[24], angle[336+i]),
+					model.prod(-susceptance[25], angle[456+i]),		// SUS[NOR-COR] * VA_COROZO
+					model.prod(-susceptance[12], angle[144+i]),		// SUS[CHI-NOR] * VA_CHIVOR
+					model.prod(-susceptance[17], angle[216+i]),		// SUS[GCM-NOR] * VA_GCM
+					model.prod(-susceptance[24], angle[288+i])};	// SUS[MAG-NOR] * VA_MAGDAMED
+			
+			rng[0][336+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[14][i], "C_NORDESTE_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda PAGUA
+		72	PAGUA	PAGUA	1704
+		
+		26	L27	360	PAGUA	48	BOGOTA	956.80	13.91	624
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[1704+i],
+					unserved[360+i],
+					// (SUS[PAG-BOG]) * VA_PAGUA
+					model.prod(susceptance[26], angle[360+i]),
+					model.prod(-susceptance[26], angle[48+i])};	// SUS[PAG-BOG] * VA_BOGOTA
+			
+			rng[0][360+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[15][i], "C_PAGUA_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda SANCARLO
+		87	SANCARLOS	SANCARLO	2064
+		
+		27	L28	384	SANCARLO	48	BOGOTA		445.28	6.97	648
+		28	L29	384	SANCARLO	192	CQR			446.20	6.88	672
+		29	L30	384	SANCARLO	432	VALLECAU	1000.00	5.22	696
+		1	L2	0	ANTIOQUI	384	SANCARLO	1930.00	19.05	24
+		23	L24	288	MAGDAMED	384	SANCARLO	1436.76	8.35	552
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[2064+i],
+					unserved[384+i],
+					// (SUS[SCA-BOG] + SUS[SCA-CQR] + SUS[SCA-VAL] + SUS[ANT-SCA] + SUS[MAG-SCA]) * VA_SANCARLO
+					model.prod(susceptance[27] + susceptance[28] + susceptance[29] + susceptance[1] + susceptance[23], angle[384+i]),
+					model.prod(-susceptance[27], angle[48+i]),		// SUS[SCA-BOG] * VA_BOGOTA
+					model.prod(-susceptance[28], angle[192+i]),		// SUS[SCA-CQR] * VA_CQR
+					model.prod(-susceptance[29], angle[432+i]),		// SUS[SCA-VAL] * VA_VALLECAU
+					model.prod(-susceptance[1], angle[0+i]),		// SUS[ANT-SCA] * VA_ANTIOQUI
+					model.prod(-susceptance[23], angle[288+i])};	// SUS[MAG-SCA] * VA_MAGDAMED
+			
+			rng[0][384+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[16][i], "C_SANCARLO_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda TOLIMA
+		49	MCURRUCU	TOLIMA	1152
+		61	MPRADO4		TOLIMA	1440
+		66	MTOLIMA1	TOLIMA	1560
+		82	PRADO		TOLIMA	1944
+		95	TPIEDRAS	TOLIMA	2256
+		
+		30	L31	408	TOLIMA		48	BOGOTA	882.28	13.86	720
+		14	L15	192	CQR			408	TOLIMA	390.08	6.98	336
+		20	L21	240	HUILACAQ	408	TOLIMA	205.85	3.41	480
+		22	L23	264	LAMIEL		408	TOLIMA	458.16	6.94	528
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[1152+i],
+					generation[1440+i],
+					generation[1560+i],
+					generation[1944+i],
+					generation[2256+i],
+					unserved[408+i],
+					// (SUS[TOL-BOG] + SUS[CQR-TOL] + SUS[HUI-TOL] + SUS[MIE-TOL]) * VA_TOLIMA
+					model.prod(susceptance[30] + susceptance[14] + susceptance[20] + susceptance[22], angle[408+i]),
+					model.prod(-susceptance[30], angle[48+i]),		// SUS[TOL-BOG] * VA_BOGOTA
+					model.prod(-susceptance[14], angle[192+i]),		// SUS[CQR-TOL] * VA_CQR
+					model.prod(-susceptance[20], angle[240+i]),		// SUS[HUI-TOL] * VA_HUILACAQ
+					model.prod(-susceptance[22], angle[264+i])};	// SUS[MIE-TOL] * VA_LAMIEL
+			
+			rng[0][408+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[17][i], "C_TOLIMA_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda VALLECAU
+		1	ALBAN		VALLECAU	0
+		5	CALIMA1		VALLECAU	96
+		9	CSANCARLOS	VALLECAU	192
+		13	CVALLEC1	VALLECAU	288
+		51	MEMCALI		VALLECAU	1200
+		67	MTULUA		VALLECAU	1584
+		68	MVALLEC1	VALLECAU	1608
+		70	M_AMAIME	VALLECAU	1656
+		71	M_PROVIDEN	VALLECAU	1680
+		86	SALVAJINA	VALLECAU	2040
+		94	TEMCALI		VALLECAU	2232
+		97	TVALLE		VALLECAU	2304
+		
+		31	L32	432	VALLECAU	96	CAUCANAR	461.38	7.00	744
+		15	L16	192	CQR			432	VALLECAU	1143.10	17.33	360
+		29	L30	384	SANCARLO	432	VALLECAU	1000.00	5.22	696
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[0+i],
+					generation[96+i],
+					generation[192+i],
+					generation[288+i],
+					generation[1200+i],
+					generation[1584+i],
+					generation[1608+i],
+					generation[1656+i],
+					generation[1680+i],
+					generation[2040+i],
+					generation[2232+i],
+					generation[2304+i],
+					unserved[432+i],
+					// (SUS[VAL-CAU] + SUS[CQR-VAL] + SUS[SCA-VAL]) * VA_VALLECAU
+					model.prod(susceptance[31] + susceptance[15] + susceptance[29], angle[432+i]),
+					model.prod(-susceptance[31], angle[96+i]),	// SUS[VAL-CAU] * VA_CAUCANAR
+					model.prod(-susceptance[15], angle[192+i]),	// SUS[CQR-VAL] * VA_CQR
+					model.prod(-susceptance[29], angle[384+i])};	// SUS[SCA-VAL] * VA_SANCARLO
+			
+			rng[0][432+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[18][i], "C_VALLECAU_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda COROZO
+		8	COROZO1	COROZO	168
+		
+		25	L26	336	NORDESTE	456	COROZO	346.38	9.02	600
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[168+i],
+					unserved[456+i],
+					// (SUS[NOR-COR]) * VA_COROZO
+					model.prod(susceptance[25], angle[456+i]),
+					model.prod(-susceptance[25], angle[336+i])};	// SUS[VAL-CAU] * VA_NORDESTE
+			
+			rng[0][456+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[19][i], "C_COROZO_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda CUATRICENTENARIO
+		100	VENEZUE1	CUATRICENTENARIO	2376
+		
+		18	L19	216	GCM	480	CUATRICENTENARIO	202.86	3.30	432
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[2376+i],
+					unserved[480+i],
+					// (SUS[GCM-CUA]) * VA_CUATRICENTENARIO
+					model.prod(susceptance[18], angle[480+i]),
+					model.prod(-susceptance[18], angle[216+i])};	// SUS[GCM-CUA] * VA_GCM
+			
+			rng[0][480+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[20][i], "C_CUATRICENTENARIO_"+i); 
+		}
+		
+		
+		/* Balance oferta y demanda ECUADOR220
+		15	ECUADOR11	ECUADOR220	336
+		16	ECUADOR12	ECUADOR220	360
+		17	ECUADOR13	ECUADOR220	384
+		18	ECUADOR14	ECUADOR220	408
+		19	ECUADOR21	ECUADOR220	432
+		20	ECUADOR22	ECUADOR220	456
+		21	ECUADOR23	ECUADOR220	480
+		22	ECUADOR24	ECUADOR220	504
+		
+		8	L9	96	CAUCANAR	504	ECUADOR	972.90	13.85	192
+		*/
+		for (int i = 0; i < 24; i++){
+			IloNumExpr[] expr = {
+					generation[336+i],
+					generation[360+i],
+					generation[384+i],
+					generation[408+i],
+					generation[432+i],
+					generation[456+i],
+					generation[480+i],
+					generation[504+i],
+					unserved[504+i],
+					// (SUS[CAU-ECU]) * VA_ECUADOR220
+					model.prod(susceptance[8], angle[504+i]),
+					model.prod(-susceptance[8], angle[96+i])};	// SUS[CAU-ECU] * VA_CAUCANAR
+			
+			rng[0][504+i] = model.addEq(
+					model.sum(expr), 	
+					powerDemandVector[21][i], "C_ECUADOR220_"+i); 
+		}
+       
+        // Maximum power by line
+		for (int i = 0; i < 24; ++i) 
+		{
+			rng[1][0 + i]	= model.addLe(model.diff(model.prod(susceptance[0],angle[0+i]), model.prod(susceptance[0],angle[192 + i])), powerLimit[0], "c4_1"); 		// 0	L1	0	ANTIOQUI	192	CQR
+			rng[1][24 + i]	= model.addLe(model.diff(model.prod(susceptance[1],angle[0+i]), model.prod(susceptance[1],angle[384 + i])), powerLimit[1], "c4_2");			// 1	L2	0	ANTIOQUI	384	SANCARLO
+			rng[1][48 + i]	= model.addLe(model.diff(model.prod(susceptance[2],angle[0+i]), model.prod(susceptance[2],angle[288 + i])), powerLimit[2], "c4_3");			// 2	L3	0	ANTIOQUI	288	MAGDAMED
+			rng[1][72 + i]	= model.addLe(model.diff(model.prod(susceptance[3],angle[24+i]), model.prod(susceptance[3],angle[168 + i])), powerLimit[3], "c4_4");		// 3	L4	24	ATLANTIC	168	CORDOSUC
+			rng[1][96 + i]	= model.addLe(model.diff(model.prod(susceptance[4],angle[48+i]), model.prod(susceptance[4],angle[288 + i])), powerLimit[4], "c4_5");		// 4	L5	48	BOGOTA		288	MAGDAMED
+			rng[1][120 + i]	= model.addLe(model.diff(model.prod(susceptance[5],angle[48+i]), model.prod(susceptance[5],angle[312 + i])), powerLimit[5], "c4_6");		// 5	L6	48	BOGOTA		312	META
+			rng[1][144 + i]	= model.addLe(model.diff(model.prod(susceptance[6],angle[72+i]), model.prod(susceptance[6],angle[24 + i])), powerLimit[6], "c4_7");			// 6	L7	72	BOLIVAR		24	ATLANTIC
+			rng[1][168 + i]	= model.addLe(model.diff(model.prod(susceptance[7],angle[72+i]), model.prod(susceptance[7],angle[216 + i])), powerLimit[7], "c4_8");		// 7	L8	72	BOLIVAR		216	GCM
+			rng[1][192 + i]	= model.addLe(model.diff(model.prod(susceptance[8],angle[96+i]), model.prod(susceptance[8],angle[504 + i])), powerLimit[8], "c4_9");		// 8	L9	96	CAUCANAR	504	ECUADOR
+			rng[1][216 + i]	= model.addLe(model.diff(model.prod(susceptance[9],angle[120+i]), model.prod(susceptance[9],angle[288 + i])), powerLimit[9], "c4_10");		// 9	L10	120	CERROMAT	288	MAGDAMED
+			rng[1][240 + i]	= model.addLe(model.diff(model.prod(susceptance[10],angle[120+i]), model.prod(susceptance[10],angle[0 + i])), powerLimit[10], "c4_11");		// 10	L11	120	CERROMAT	0	ANTIOQUI
+			rng[1][264 + i]	= model.addLe(model.diff(model.prod(susceptance[11],angle[144+i]), model.prod(susceptance[11],angle[48 + i])), powerLimit[11], "c4_12");	// 11	L12	144	CHIVOR		48	BOGOTA
+			rng[1][288 + i]	= model.addLe(model.diff(model.prod(susceptance[12],angle[144+i]), model.prod(susceptance[12],angle[336 + i])), powerLimit[12], "c4_13");	// 12	L13	144	CHIVOR		336	NORDESTE
+			rng[1][312 + i]	= model.addLe(model.diff(model.prod(susceptance[13],angle[168+i]), model.prod(susceptance[13],angle[120 + i])), powerLimit[13], "c4_14");	// 13	L14	168	CORDOSUC	120	CERROMAT
+			rng[1][336 + i]	= model.addLe(model.diff(model.prod(susceptance[14],angle[192+i]), model.prod(susceptance[14],angle[408 + i])), powerLimit[14], "c4_15");	// 14	L15	192	CQR			408	TOLIMA
+			rng[1][360 + i]	= model.addLe(model.diff(model.prod(susceptance[15],angle[192+i]), model.prod(susceptance[15],angle[432 + i])), powerLimit[15], "c4_16");	// 15	L16	192	CQR			432	VALLECAU
+			rng[1][384 + i]	= model.addLe(model.diff(model.prod(susceptance[16],angle[216+i]), model.prod(susceptance[16],angle[24 + i])), powerLimit[16], "c4_17");	// 16	L17	216	GCM			24	ATLANTIC
+			rng[1][408 + i]	= model.addLe(model.diff(model.prod(susceptance[17],angle[216+i]), model.prod(susceptance[17],angle[336 + i])), powerLimit[17], "c4_18");	// 17	L18	216	GCM			336	NORDESTE
+			rng[1][432 + i]	= model.addLe(model.diff(model.prod(susceptance[18],angle[216+i]), model.prod(susceptance[18],angle[480 + i])), powerLimit[18], "c4_19");	// 18	L19	216	GCM			480	CUATRICENTENARIO
+			rng[1][456 + i]	= model.addLe(model.diff(model.prod(susceptance[19],angle[240+i]), model.prod(susceptance[19],angle[96 + i])), powerLimit[19], "c4_20");	// 19	L20	240	HUILACAQ	96	CAUCANAR
+			rng[1][480 + i]	= model.addLe(model.diff(model.prod(susceptance[20],angle[240+i]), model.prod(susceptance[20],angle[408 + i])), powerLimit[20], "c4_21");	// 20	L21	240	HUILACAQ	408	TOLIMA
+			rng[1][504 + i]	= model.addLe(model.diff(model.prod(susceptance[21],angle[264+i]), model.prod(susceptance[21],angle[48 + i])), powerLimit[21], "c4_22");	// 21	L22	264	LAMIEL		48	BOGOTA
+			rng[1][528 + i]	= model.addLe(model.diff(model.prod(susceptance[22],angle[264+i]), model.prod(susceptance[22],angle[408 + i])), powerLimit[22], "c4_23");	// 22	L23	264	LAMIEL		408	TOLIMA
+			rng[1][552 + i]	= model.addLe(model.diff(model.prod(susceptance[23],angle[288+i]), model.prod(susceptance[23],angle[384 + i])), powerLimit[23], "c4_24");	// 23	L24	288	MAGDAMED	384	SANCARLO
+			rng[1][576 + i]	= model.addLe(model.diff(model.prod(susceptance[24],angle[288+i]), model.prod(susceptance[24],angle[336 + i])), powerLimit[24], "c4_25");	// 24	L25	288	MAGDAMED	336	NORDESTE
+			rng[1][600 + i]	= model.addLe(model.diff(model.prod(susceptance[25],angle[336+i]), model.prod(susceptance[25],angle[456 + i])), powerLimit[25], "c4_26");	// 25	L26	336	NORDESTE	456	COROZO
+			rng[1][624 + i]	= model.addLe(model.diff(model.prod(susceptance[26],angle[360+i]), model.prod(susceptance[26],angle[48 + i])), powerLimit[26], "c4_27");	// 26	L27	360	PAGUA		48	BOGOTA
+			rng[1][648 + i]	= model.addLe(model.diff(model.prod(susceptance[27],angle[384+i]), model.prod(susceptance[27],angle[48 + i])), powerLimit[27], "c4_28");	// 27	L28	384	SANCARLO	48	BOGOTA
+			rng[1][672 + i]	= model.addLe(model.diff(model.prod(susceptance[28],angle[384+i]), model.prod(susceptance[28],angle[192 + i])), powerLimit[28], "c4_29");	// 28	L29	384	SANCARLO	192	CQR
+			rng[1][696 + i]	= model.addLe(model.diff(model.prod(susceptance[29],angle[384+i]), model.prod(susceptance[29],angle[432 + i])), powerLimit[29], "c4_30");	// 29	L30	384	SANCARLO	432	VALLECAU
+			rng[1][720 + i]	= model.addLe(model.diff(model.prod(susceptance[30],angle[408+i]), model.prod(susceptance[30],angle[48 + i])), powerLimit[30], "c4_31");	// 30	L31	408	TOLIMA		48	BOGOTA
+			rng[1][744 + i]	= model.addLe(model.diff(model.prod(susceptance[31],angle[432+i]), model.prod(susceptance[31],angle[96 + i])), powerLimit[31], "c4_32");	// 31	L32	432	VALLECAU	96	CAUCANAR    
+      }
+		
+	  // Minimum power by line	
+	 for (int i = 0; i < 24; ++i) 
+	 {
+			rng[1][768 + 0 + i]	= model.addGe(model.diff(model.prod(susceptance[0],angle[0+i]), model.prod(susceptance[0],angle[192 + i])), -powerLimit[0], "c5_1"); 			// 0	L1	0	ANTIOQUI	192	CQR
+			rng[1][768 + 24 + i]	= model.addGe(model.diff(model.prod(susceptance[1],angle[0+i]), model.prod(susceptance[1],angle[384 + i])), -powerLimit[1], "c5_2");		// 1	L2	0	ANTIOQUI	384	SANCARLO
+			rng[1][768 + 48 + i]	= model.addGe(model.diff(model.prod(susceptance[2],angle[0+i]), model.prod(susceptance[2],angle[288 + i])), -powerLimit[2], "c5_3");		// 2	L3	0	ANTIOQUI	288	MAGDAMED
+			rng[1][768 + 72 + i]	= model.addGe(model.diff(model.prod(susceptance[3],angle[24+i]), model.prod(susceptance[3],angle[168 + i])), -powerLimit[3], "c5_4");		// 3	L4	24	ATLANTIC	168	CORDOSUC
+			rng[1][768 + 96 + i]	= model.addGe(model.diff(model.prod(susceptance[4],angle[48+i]), model.prod(susceptance[4],angle[288 + i])), -powerLimit[4], "c5_5");		// 4	L5	48	BOGOTA		288	MAGDAMED
+			rng[1][768 + 120 + i]	= model.addGe(model.diff(model.prod(susceptance[5],angle[48+i]), model.prod(susceptance[5],angle[312 + i])), -powerLimit[5], "c5_6");		// 5	L6	48	BOGOTA		312	META
+			rng[1][768 + 144 + i]	= model.addGe(model.diff(model.prod(susceptance[6],angle[72+i]), model.prod(susceptance[6],angle[24 + i])), -powerLimit[6], "c5_7");		// 6	L7	72	BOLIVAR		24	ATLANTIC
+			rng[1][768 + 168 + i]	= model.addGe(model.diff(model.prod(susceptance[7],angle[72+i]), model.prod(susceptance[7],angle[216 + i])), -powerLimit[7], "c5_8");		// 7	L8	72	BOLIVAR		216	GCM
+			rng[1][768 + 192 + i]	= model.addGe(model.diff(model.prod(susceptance[8],angle[96+i]), model.prod(susceptance[8],angle[504 + i])), -powerLimit[8], "c5_9");		// 8	L9	96	CAUCANAR	504	ECUADOR
+			rng[1][768 + 216 + i]	= model.addGe(model.diff(model.prod(susceptance[9],angle[120+i]), model.prod(susceptance[9],angle[288 + i])), -powerLimit[9], "c5_10");		// 9	L10	120	CERROMAT	288	MAGDAMED
+			rng[1][768 + 240 + i]	= model.addGe(model.diff(model.prod(susceptance[10],angle[120+i]), model.prod(susceptance[10],angle[0 + i])), -powerLimit[10], "c5_11");	// 10	L11	120	CERROMAT	0	ANTIOQUI
+			rng[1][768 + 264 + i]	= model.addGe(model.diff(model.prod(susceptance[11],angle[144+i]), model.prod(susceptance[11],angle[48 + i])), -powerLimit[11], "c5_12");	// 11	L12	144	CHIVOR		48	BOGOTA
+			rng[1][768 + 288 + i]	= model.addGe(model.diff(model.prod(susceptance[12],angle[144+i]), model.prod(susceptance[12],angle[336 + i])), -powerLimit[12], "c5_13");	// 12	L13	144	CHIVOR		336	NORDESTE
+			rng[1][768 + 312 + i]	= model.addGe(model.diff(model.prod(susceptance[13],angle[168+i]), model.prod(susceptance[13],angle[120 + i])), -powerLimit[13], "c5_14");	// 13	L14	168	CORDOSUC	120	CERROMAT
+			rng[1][768 + 336 + i]	= model.addGe(model.diff(model.prod(susceptance[14],angle[192+i]), model.prod(susceptance[14],angle[408 + i])), -powerLimit[14], "c5_15");	// 14	L15	192	CQR			408	TOLIMA
+			rng[1][768 + 360 + i]	= model.addGe(model.diff(model.prod(susceptance[15],angle[192+i]), model.prod(susceptance[15],angle[432 + i])), -powerLimit[15], "c5_16");	// 15	L16	192	CQR			432	VALLECAU
+			rng[1][768 + 384 + i]	= model.addGe(model.diff(model.prod(susceptance[16],angle[216+i]), model.prod(susceptance[16],angle[24 + i])), -powerLimit[16], "c5_17");	// 16	L17	216	GCM			24	ATLANTIC
+			rng[1][768 + 408 + i]	= model.addGe(model.diff(model.prod(susceptance[17],angle[216+i]), model.prod(susceptance[17],angle[336 + i])), -powerLimit[17], "c5_18");	// 17	L18	216	GCM			336	NORDESTE
+			rng[1][768 + 432 + i]	= model.addGe(model.diff(model.prod(susceptance[18],angle[216+i]), model.prod(susceptance[18],angle[480 + i])), -powerLimit[18], "c5_19");	// 18	L19	216	GCM			480	CUATRICENTENARIO
+			rng[1][768 + 456 + i]	= model.addGe(model.diff(model.prod(susceptance[19],angle[240+i]), model.prod(susceptance[19],angle[96 + i])), -powerLimit[19], "c5_20");	// 19	L20	240	HUILACAQ	96	CAUCANAR
+			rng[1][768 + 480 + i]	= model.addGe(model.diff(model.prod(susceptance[20],angle[240+i]), model.prod(susceptance[20],angle[408 + i])), -powerLimit[20], "c5_21");	// 20	L21	240	HUILACAQ	408	TOLIMA
+			rng[1][768 + 504 + i]	= model.addGe(model.diff(model.prod(susceptance[21],angle[264+i]), model.prod(susceptance[21],angle[48 + i])), -powerLimit[21], "c5_22");	// 21	L22	264	LAMIEL		48	BOGOTA
+			rng[1][768 + 528 + i]	= model.addGe(model.diff(model.prod(susceptance[22],angle[264+i]), model.prod(susceptance[22],angle[408 + i])), -powerLimit[22], "c5_23");	// 22	L23	264	LAMIEL		408	TOLIMA
+			rng[1][768 + 552 + i]	= model.addGe(model.diff(model.prod(susceptance[23],angle[288+i]), model.prod(susceptance[23],angle[384 + i])), -powerLimit[23], "c5_24");	// 23	L24	288	MAGDAMED	384	SANCARLO
+			rng[1][768 + 576 + i]	= model.addGe(model.diff(model.prod(susceptance[24],angle[288+i]), model.prod(susceptance[24],angle[336 + i])), -powerLimit[24], "c5_25");	// 24	L25	288	MAGDAMED	336	NORDESTE
+			rng[1][768 + 600 + i]	= model.addGe(model.diff(model.prod(susceptance[25],angle[336+i]), model.prod(susceptance[25],angle[456 + i])), -powerLimit[25], "c5_26");	// 25	L26	336	NORDESTE	456	COROZO
+			rng[1][768 + 624 + i]	= model.addGe(model.diff(model.prod(susceptance[26],angle[360+i]), model.prod(susceptance[26],angle[48 + i])), -powerLimit[26], "c5_27");	// 26	L27	360	PAGUA		48	BOGOTA
+			rng[1][768 + 648 + i]	= model.addGe(model.diff(model.prod(susceptance[27],angle[384+i]), model.prod(susceptance[27],angle[48 + i])), -powerLimit[27], "c5_28");	// 27	L28	384	SANCARLO	48	BOGOTA
+			rng[1][768 + 672 + i]	= model.addGe(model.diff(model.prod(susceptance[28],angle[384+i]), model.prod(susceptance[28],angle[192 + i])), -powerLimit[28], "c5_29");	// 28	L29	384	SANCARLO	192	CQR
+			rng[1][768 + 696 + i]	= model.addGe(model.diff(model.prod(susceptance[29],angle[384+i]), model.prod(susceptance[29],angle[432 + i])), -powerLimit[29], "c5_30");	// 29	L30	384	SANCARLO	432	VALLECAU
+			rng[1][768 + 720 + i]	= model.addGe(model.diff(model.prod(susceptance[30],angle[408+i]), model.prod(susceptance[30],angle[48 + i])), -powerLimit[30], "c5_31");	// 30	L31	408	TOLIMA		48	BOGOTA
+			rng[1][768 + 744 + i]	= model.addGe(model.diff(model.prod(susceptance[31],angle[432+i]), model.prod(susceptance[31],angle[96 + i])), -powerLimit[31], "c5_32");	// 31	L32	432	VALLECAU	96	CAUCANAR    
+      }
+   }
+}
+
+

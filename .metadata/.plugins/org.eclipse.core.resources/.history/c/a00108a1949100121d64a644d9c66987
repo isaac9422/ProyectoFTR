@@ -1,0 +1,907 @@
+package market;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Vector;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.date.DateUtilities;
+import org.jfree.ui.RefineryUtilities;
+
+import repast.simphony.space.continuous.ContinuousSpace;
+import repast.simphony.space.grid.Grid;
+
+import com.csvreader.CsvReader;
+import com.csvreader.CsvWriter;
+
+import agents.Generator;
+import agents.Operator;
+import agents.Retailer;
+import agents.Transmitter;
+
+// Cplex
+import ilog.concert.*;
+import ilog.cplex.*;
+
+public class FtrMain implements Runnable {
+
+	DailyIdealDispatch ideal = new DailyIdealDispatch();
+	Operator operator = new Operator();
+	
+	private ContinuousSpace<Object> space;
+	private Grid<Object> grid;
+	
+	// variables dle mercado
+	private List<Node> nodes = new ArrayList<Node>(Global.nGencos);	// lista de nodos
+	private List<Generator> generators = new ArrayList<Generator>(Global.nGencos);	// lista de generadores
+	private List<Retailer> retailers = new ArrayList<Retailer>(Global.nRetailers);	// lista de comercializadores
+	private List<Transmitter> transmitters = new ArrayList<Transmitter>(Global.nGridcos); 	// lista de transmisores
+	private List<GenerationUnit> generationUnits = new ArrayList<GenerationUnit>(Global.nUnits); // list of unidades de generación
+	private List<TransmissionLine> transmissionLines = new ArrayList<TransmissionLine>(Global.nLines);	// lista de líneas de transmisión
+		
+	
+	// Constructor vacío
+	public FtrMain(){}
+	
+	
+		
+		//
+		// Nodos
+		//
+		Node	nodeANTIOQUI	=	new	Node(	0	,	Global.nodesNames[	0	]	,	0	);
+		Node	nodeATLANTIC	=	new	Node(	1	,	Global.nodesNames[	1	]	,	24	);
+		Node	nodeBOGOTA		=	new	Node(	2	,	Global.nodesNames[	2	]	,	48	);
+		Node	nodeBOLIVAR		=	new	Node(	3	,	Global.nodesNames[	3	]	,	72	);
+		Node	nodeCAUCANAR	=	new	Node(	4	,	Global.nodesNames[	4	]	,	96	);
+		Node	nodeCERROMAT	=	new	Node(	5	,	Global.nodesNames[	5	]	,	120	);
+		Node	nodeCHIVOR		=	new	Node(	6	,	Global.nodesNames[	6	]	,	144	);
+		Node	nodeCORDOSUC	=	new	Node(	7	,	Global.nodesNames[	7	]	,	168	);
+		Node	nodeCQR			=	new	Node(	8	,	Global.nodesNames[	8	]	,	192	);
+		Node	nodeGCM			=	new	Node(	9	,	Global.nodesNames[	9	]	,	216	);
+		Node	nodeHUILACAQ	=	new	Node(	10	,	Global.nodesNames[	10	]	,	240	);
+		Node	nodeLAMIEL		=	new	Node(	11	,	Global.nodesNames[	11	]	,	264	);
+		Node	nodeMAGDAMED	=	new	Node(	12	,	Global.nodesNames[	12	]	,	288	);
+		Node	nodeMETA		=	new	Node(	13	,	Global.nodesNames[	13	]	,	312	);
+		Node	nodeNORDESTE	=	new	Node(	14	,	Global.nodesNames[	14	]	,	336	);
+		Node	nodePAGUA		=	new	Node(	15	,	Global.nodesNames[	15	]	,	360	);
+		Node	nodeSANCARLO	=	new	Node(	16	,	Global.nodesNames[	16	]	,	384	);
+		Node	nodeTOLIMA		=	new	Node(	17	,	Global.nodesNames[	17	]	,	408	);
+		Node	nodeVALLECAU	=	new	Node(	18	,	Global.nodesNames[	18	]	,	432	);
+		Node	nodeCOROZO		=	new	Node(	19	,	Global.nodesNames[	19	]	,	456	);
+		Node	nodeCUATRICENTENARIO=new Node(	20	,	Global.nodesNames[	20	]	,	480	);
+		Node	nodeECUADOR220	=	new	Node(	21	,	Global.nodesNames[	21	]	,	504	);
+		
+		//
+		// Generadores
+		//
+		Generator	genEPSG	=	new	Generator(	0	,	Global.generatorsCods[	0	]	,	Global.generatorsNames[	0	]	,	0	);
+		Generator	genGECG	=	new	Generator(	1	,	Global.generatorsCods[	1	]	,	Global.generatorsNames[	1	]	,	24	);
+		Generator	genENDG	=	new	Generator(	2	,	Global.generatorsCods[	2	]	,	Global.generatorsNames[	2	]	,	48	);
+		Generator	genCHVG	=	new	Generator(	3	,	Global.generatorsCods[	3	]	,	Global.generatorsNames[	3	]	,	72	);
+		Generator	genDLRG	=	new	Generator(	4	,	Global.generatorsCods[	4	]	,	Global.generatorsNames[	4	]	,	96	);
+		Generator	genESSG	=	new	Generator(	5	,	Global.generatorsCods[	5	]	,	Global.generatorsNames[	5	]	,	120	);
+		Generator	genCVAG	=	new	Generator(	6	,	Global.generatorsCods[	6	]	,	Global.generatorsNames[	6	]	,	144	);
+		Generator	genCHCG	=	new	Generator(	7	,	Global.generatorsCods[	7	]	,	Global.generatorsNames[	7	]	,	168	);
+		Generator	genECUG	=	new	Generator(	8	,	Global.generatorsCods[	8	]	,	Global.generatorsNames[	8	]	,	192	);
+		Generator	genFRSG	=	new	Generator(	9	,	Global.generatorsCods[	9	]	,	Global.generatorsNames[	9	]	,	216	);
+		Generator	genGNCG	=	new	Generator(	10	,	Global.generatorsCods[	10	]	,	Global.generatorsNames[	10	]	,	240	);
+		Generator	genEPMG	=	new	Generator(	11	,	Global.generatorsCods[	11	]	,	Global.generatorsNames[	11	]	,	264	);
+		Generator	genISGG	=	new	Generator(	12	,	Global.generatorsCods[	12	]	,	Global.generatorsNames[	12	]	,	288	);
+		Generator	genADCG	=	new	Generator(	13	,	Global.generatorsCods[	13	]	,	Global.generatorsNames[	13	]	,	312	);
+		Generator	genEEPG	=	new	Generator(	14	,	Global.generatorsCods[	14	]	,	Global.generatorsNames[	14	]	,	336	);
+		Generator	genLCSG	=	new	Generator(	15	,	Global.generatorsCods[	15	]	,	Global.generatorsNames[	15	]	,	360	);
+		Generator	genCDNG	=	new	Generator(	16	,	Global.generatorsCods[	16	]	,	Global.generatorsNames[	16	]	,	384	);
+		Generator	genCTMG	=	new	Generator(	17	,	Global.generatorsCods[	17	]	,	Global.generatorsNames[	17	]	,	408	);
+		Generator	genEECG	=	new	Generator(	18	,	Global.generatorsCods[	18	]	,	Global.generatorsNames[	18	]	,	432	);
+		Generator	genFACG	=	new	Generator(	19	,	Global.generatorsCods[	19	]	,	Global.generatorsNames[	19	]	,	456	);
+		Generator	genERCG	=	new	Generator(	20	,	Global.generatorsCods[	20	]	,	Global.generatorsNames[	20	]	,	480	);
+		Generator	genEGCG	=	new	Generator(	21	,	Global.generatorsCods[	21	]	,	Global.generatorsNames[	21	]	,	504	);
+		Generator	genCIVG	=	new	Generator(	22	,	Global.generatorsCods[	22	]	,	Global.generatorsNames[	22	]	,	528	);
+		Generator	genHLAG	=	new	Generator(	23	,	Global.generatorsCods[	23	]	,	Global.generatorsNames[	23	]	,	552	);
+		Generator	genGEEG	=	new	Generator(	24	,	Global.generatorsCods[	24	]	,	Global.generatorsNames[	24	]	,	576	);
+		Generator	genCETG	=	new	Generator(	25	,	Global.generatorsCods[	25	]	,	Global.generatorsNames[	25	]	,	600	);
+		Generator	genTYPG	=	new	Generator(	26	,	Global.generatorsCods[	26	]	,	Global.generatorsNames[	26	]	,	624	);
+		Generator	genHIMG	=	new	Generator(	27	,	Global.generatorsCods[	27	]	,	Global.generatorsNames[	27	]	,	648	);
+		Generator	genPRLG	=	new	Generator(	28	,	Global.generatorsCods[	28	]	,	Global.generatorsNames[	28	]	,	672	);
+		Generator	genTRMG	=	new	Generator(	29	,	Global.generatorsCods[	29	]	,	Global.generatorsNames[	29	]	,	696	);
+		Generator	genTCDG	=	new	Generator(	30	,	Global.generatorsCods[	30	]	,	Global.generatorsNames[	30	]	,	720	);
+		Generator	genTEMG	=	new	Generator(	31	,	Global.generatorsCods[	31	]	,	Global.generatorsNames[	31	]	,	744	);
+		Generator	genTRPG	=	new	Generator(	32	,	Global.generatorsCods[	32	]	,	Global.generatorsNames[	32	]	,	768	);
+		Generator	genEMUG	=	new	Generator(	33	,	Global.generatorsCods[	33	]	,	Global.generatorsNames[	33	]	,	792	);
+		
+		//
+		// Unidades de generación
+		//		
+		GenerationUnit	unitALBAN	=	new	GenerationUnit(	0	,	Global.generationUnitsNames[	0	]	,	genEPSG	,	nodeVALLECAU	,	429.00	,	30.00	,	0	);
+		GenerationUnit	unitBARRANQ3	=	new	GenerationUnit(	1	,	Global.generationUnitsNames[	1	]	,	genGECG	,	nodeATLANTIC	,	60.00	,	0.00	,	24	);
+		GenerationUnit	unitBARRANQ4	=	new	GenerationUnit(	2	,	Global.generationUnitsNames[	2	]	,	genGECG	,	nodeATLANTIC	,	60.00	,	0.00	,	48	);
+		GenerationUnit	unitBETANIA	=	new	GenerationUnit(	3	,	Global.generationUnitsNames[	3	]	,	genENDG	,	nodeHUILACAQ	,	540.00	,	60.00	,	72	);
+		GenerationUnit	unitCALIMA1	=	new	GenerationUnit(	4	,	Global.generationUnitsNames[	4	]	,	genEPSG	,	nodeVALLECAU	,	132.00	,	16.00	,	96	);
+		GenerationUnit	unitCHIVOR	=	new	GenerationUnit(	5	,	Global.generationUnitsNames[	5	]	,	genCHVG	,	nodeCHIVOR	,	1000.00	,	10.00	,	120	);
+		GenerationUnit	unitCOINCAUCA	=	new	GenerationUnit(	6	,	Global.generationUnitsNames[	6	]	,	genDLRG	,	nodeCAUCANAR	,	3.50	,	0.00	,	144	);
+		GenerationUnit	unitCOROZO1	=	new	GenerationUnit(	7	,	Global.generationUnitsNames[	7	]	,	genESSG	,	nodeCOROZO	,	55.00	,	0.00	,	168	);
+		GenerationUnit	unitCSANCARLOS	=	new	GenerationUnit(	8	,	Global.generationUnitsNames[	8	]	,	genEPSG	,	nodeVALLECAU	,	2.00	,	0.00	,	192	);
+		GenerationUnit	unitCTGEMG1	=	new	GenerationUnit(	9	,	Global.generationUnitsNames[	9	]	,	genENDG	,	nodeBOLIVAR	,	61.00	,	0.00	,	216	);
+		GenerationUnit	unitCTGEMG2	=	new	GenerationUnit(	10	,	Global.generationUnitsNames[	10	]	,	genENDG	,	nodeBOLIVAR	,	60.00	,	0.00	,	240	);
+		GenerationUnit	unitCTGEMG3	=	new	GenerationUnit(	11	,	Global.generationUnitsNames[	11	]	,	genENDG	,	nodeBOLIVAR	,	66.00	,	0.00	,	264	);
+		GenerationUnit	unitCVALLEC1	=	new	GenerationUnit(	12	,	Global.generationUnitsNames[	12	]	,	genCVAG	,	nodeVALLECAU	,	31.90	,	0.00	,	288	);
+		GenerationUnit	unitDORADA1	=	new	GenerationUnit(	13	,	Global.generationUnitsNames[	13	]	,	genCHCG	,	nodeCQR	,	51.00	,	0.00	,	312	);
+		GenerationUnit	unitECUADOR11	=	new	GenerationUnit(	14	,	Global.generationUnitsNames[	14	]	,	genECUG	,	nodeECUADOR220	,	0.00	,	0.00	,	336	);
+		GenerationUnit	unitECUADOR12	=	new	GenerationUnit(	15	,	Global.generationUnitsNames[	15	]	,	genECUG	,	nodeECUADOR220	,	0.00	,	0.00	,	360	);
+		GenerationUnit	unitECUADOR13	=	new	GenerationUnit(	16	,	Global.generationUnitsNames[	16	]	,	genECUG	,	nodeECUADOR220	,	0.00	,	0.00	,	384	);
+		GenerationUnit	unitECUADOR14	=	new	GenerationUnit(	17	,	Global.generationUnitsNames[	17	]	,	genECUG	,	nodeECUADOR220	,	0.00	,	0.00	,	408	);
+		GenerationUnit	unitECUADOR21	=	new	GenerationUnit(	18	,	Global.generationUnitsNames[	18	]	,	genECUG	,	nodeECUADOR220	,	0.00	,	0.00	,	432	);
+		GenerationUnit	unitECUADOR22	=	new	GenerationUnit(	19	,	Global.generationUnitsNames[	19	]	,	genECUG	,	nodeECUADOR220	,	0.00	,	0.00	,	456	);
+		GenerationUnit	unitECUADOR23	=	new	GenerationUnit(	20	,	Global.generationUnitsNames[	20	]	,	genECUG	,	nodeECUADOR220	,	0.00	,	0.00	,	480	);
+		GenerationUnit	unitECUADOR24	=	new	GenerationUnit(	21	,	Global.generationUnitsNames[	21	]	,	genECUG	,	nodeECUADOR220	,	0.00	,	0.00	,	504	);
+		GenerationUnit	unitESMERALDA	=	new	GenerationUnit(	22	,	Global.generationUnitsNames[	22	]	,	genCHCG	,	nodeCQR	,	30.00	,	0.00	,	528	);
+		GenerationUnit	unitFLORES1	=	new	GenerationUnit(	23	,	Global.generationUnitsNames[	23	]	,	genFRSG	,	nodeATLANTIC	,	160.00	,	0.00	,	552	);
+		GenerationUnit	unitFLORES21	=	new	GenerationUnit(	24	,	Global.generationUnitsNames[	24	]	,	genFRSG	,	nodeATLANTIC	,	112.00	,	0.00	,	576	);
+		GenerationUnit	unitFLORES3	=	new	GenerationUnit(	25	,	Global.generationUnitsNames[	25	]	,	genFRSG	,	nodeATLANTIC	,	169.00	,	0.00	,	600	);
+		GenerationUnit	unitFLORESIVB	=	new	GenerationUnit(	26	,	Global.generationUnitsNames[	26	]	,	genFRSG	,	nodeATLANTIC	,	450.00	,	100.00	,	624	);
+		GenerationUnit	unitFLORIDA2	=	new	GenerationUnit(	27	,	Global.generationUnitsNames[	27	]	,	genGNCG	,	nodeCAUCANAR	,	19.90	,	0.00	,	648	);
+		GenerationUnit	unitGUAJIR11	=	new	GenerationUnit(	28	,	Global.generationUnitsNames[	28	]	,	genGECG	,	nodeGCM	,	145.00	,	0.00	,	672	);
+		GenerationUnit	unitGUAJIR21	=	new	GenerationUnit(	29	,	Global.generationUnitsNames[	29	]	,	genGECG	,	nodeGCM	,	151.00	,	0.00	,	696	);
+		GenerationUnit	unitGUATAPE	=	new	GenerationUnit(	30	,	Global.generationUnitsNames[	30	]	,	genEPMG	,	nodeANTIOQUI	,	560.00	,	0.00	,	720	);
+		GenerationUnit	unitGUATRON	=	new	GenerationUnit(	31	,	Global.generationUnitsNames[	31	]	,	genEPMG	,	nodeANTIOQUI	,	512.00	,	35.00	,	744	);
+		GenerationUnit	unitGUAVIO	=	new	GenerationUnit(	32	,	Global.generationUnitsNames[	32	]	,	genENDG	,	nodeBOGOTA	,	1200.00	,	60.00	,	768	);
+		GenerationUnit	unitINSULA	=	new	GenerationUnit(	33	,	Global.generationUnitsNames[	33	]	,	genCHCG	,	nodeCQR	,	19.90	,	0.00	,	792	);
+		GenerationUnit	unitJAGUAS	=	new	GenerationUnit(	34	,	Global.generationUnitsNames[	34	]	,	genISGG	,	nodeANTIOQUI	,	170.00	,	15.00	,	816	);
+		GenerationUnit	unitLATASAJERA	=	new	GenerationUnit(	35	,	Global.generationUnitsNames[	35	]	,	genEPMG	,	nodeANTIOQUI	,	306.00	,	0.00	,	840	);
+		GenerationUnit	unitMAGUAFRE	=	new	GenerationUnit(	36	,	Global.generationUnitsNames[	36	]	,	genADCG	,	nodeANTIOQUI	,	7.05	,	0.00	,	864	);
+		GenerationUnit	unitMANTIOQ1	=	new	GenerationUnit(	37	,	Global.generationUnitsNames[	37	]	,	genEPMG	,	nodeANTIOQUI	,	134.27	,	0.00	,	888	);
+		GenerationUnit	unitMBELMONTE	=	new	GenerationUnit(	38	,	Global.generationUnitsNames[	38	]	,	genEEPG	,	nodeCQR	,	3.40	,	0.00	,	912	);
+		GenerationUnit	unitMBOGOTA1	=	new	GenerationUnit(	39	,	Global.generationUnitsNames[	39	]	,	genENDG	,	nodeBOGOTA	,	115.00	,	0.00	,	936	);
+		GenerationUnit	unitMCALDERAS	=	new	GenerationUnit(	40	,	Global.generationUnitsNames[	40	]	,	genISGG	,	nodeANTIOQUI	,	19.90	,	0.00	,	960	);
+		GenerationUnit	unitMCARUQUIA	=	new	GenerationUnit(	41	,	Global.generationUnitsNames[	41	]	,	genLCSG	,	nodeANTIOQUI	,	9.50	,	0.00	,	984	);
+		GenerationUnit	unitMCASCADA1	=	new	GenerationUnit(	42	,	Global.generationUnitsNames[	42	]	,	genLCSG	,	nodeANTIOQUI	,	2.30	,	0.00	,	1008	);
+		GenerationUnit	unitMCAUCAN1	=	new	GenerationUnit(	43	,	Global.generationUnitsNames[	43	]	,	genCDNG	,	nodeCAUCANAR	,	7.33	,	0.00	,	1032	);
+		GenerationUnit	unitMCAUCAN2	=	new	GenerationUnit(	44	,	Global.generationUnitsNames[	44	]	,	genGNCG	,	nodeCAUCANAR	,	13.77	,	0.00	,	1056	);
+		GenerationUnit	unitMCIMARR1	=	new	GenerationUnit(	45	,	Global.generationUnitsNames[	45	]	,	genCTMG	,	nodeNORDESTE	,	19.90	,	0.00	,	1080	);
+		GenerationUnit	unitMCQR1	=	new	GenerationUnit(	46	,	Global.generationUnitsNames[	46	]	,	genCHCG	,	nodeCQR	,	7.60	,	0.00	,	1104	);
+		GenerationUnit	unitMCUNDINAMARCA	=	new	GenerationUnit(	47	,	Global.generationUnitsNames[	47	]	,	genEECG	,	nodeBOGOTA	,	15.60	,	0.00	,	1128	);
+		GenerationUnit	unitMCURRUCU	=	new	GenerationUnit(	48	,	Global.generationUnitsNames[	48	]	,	genFACG	,	nodeTOLIMA	,	1.25	,	0.00	,	1152	);
+		GenerationUnit	unitMELBOSQUE	=	new	GenerationUnit(	49	,	Global.generationUnitsNames[	49	]	,	genERCG	,	nodeCQR	,	2.28	,	0.00	,	1176	);
+		GenerationUnit	unitMEMCALI	=	new	GenerationUnit(	50	,	Global.generationUnitsNames[	50	]	,	genEGCG	,	nodeVALLECAU	,	0.00	,	0.00	,	1200	);
+		GenerationUnit	unitMERILEC1	=	new	GenerationUnit(	51	,	Global.generationUnitsNames[	51	]	,	genCIVG	,	nodeNORDESTE	,	167.00	,	0.00	,	1224	);
+		GenerationUnit	unitMGUANAQUITA	=	new	GenerationUnit(	52	,	Global.generationUnitsNames[	52	]	,	genLCSG	,	nodeANTIOQUI	,	9.50	,	0.00	,	1248	);
+		GenerationUnit	unitMHUILAQ1	=	new	GenerationUnit(	53	,	Global.generationUnitsNames[	53	]	,	genHLAG	,	nodeHUILACAQ	,	2.69	,	0.00	,	1272	);
+		GenerationUnit	unitMIEL1	=	new	GenerationUnit(	54	,	Global.generationUnitsNames[	54	]	,	genISGG	,	nodeLAMIEL	,	396.00	,	20.00	,	1296	);
+		GenerationUnit	unitMJEPIRAC	=	new	GenerationUnit(	55	,	Global.generationUnitsNames[	55	]	,	genEPMG	,	nodeGCM	,	18.42	,	0.00	,	1320	);
+		GenerationUnit	unitMMORRO1	=	new	GenerationUnit(	56	,	Global.generationUnitsNames[	56	]	,	genCTMG	,	nodeNORDESTE	,	19.90	,	0.00	,	1344	);
+		GenerationUnit	unitMMORRO2	=	new	GenerationUnit(	57	,	Global.generationUnitsNames[	57	]	,	genCTMG	,	nodeNORDESTE	,	19.90	,	0.00	,	1368	);
+		GenerationUnit	unitMNLIBARE	=	new	GenerationUnit(	58	,	Global.generationUnitsNames[	58	]	,	genEEPG	,	nodeCQR	,	5.10	,	0.00	,	1392	);
+		GenerationUnit	unitMNORDE1	=	new	GenerationUnit(	59	,	Global.generationUnitsNames[	59	]	,	genESSG	,	nodeNORDESTE	,	20.95	,	0.00	,	1416	);
+		GenerationUnit	unitMPRADO4	=	new	GenerationUnit(	60	,	Global.generationUnitsNames[	60	]	,	genEPSG	,	nodeTOLIMA	,	5.00	,	0.00	,	1440	);
+		GenerationUnit	unitMRIOMAYO	=	new	GenerationUnit(	61	,	Global.generationUnitsNames[	61	]	,	genCDNG	,	nodeCAUCANAR	,	19.80	,	0.00	,	1464	);
+		GenerationUnit	unitMSANTANA	=	new	GenerationUnit(	62	,	Global.generationUnitsNames[	62	]	,	genENDG	,	nodeBOGOTA	,	8.00	,	0.00	,	1488	);
+		GenerationUnit	unitMSANTARITA	=	new	GenerationUnit(	63	,	Global.generationUnitsNames[	63	]	,	genFACG	,	nodeANTIOQUI	,	1.30	,	0.00	,	1512	);
+		GenerationUnit	unitMSANTIAGO	=	new	GenerationUnit(	64	,	Global.generationUnitsNames[	64	]	,	genGEEG	,	nodeANTIOQUI	,	2.80	,	0.00	,	1536	);
+		GenerationUnit	unitMTOLIMA1	=	new	GenerationUnit(	65	,	Global.generationUnitsNames[	65	]	,	genGNCG	,	nodeTOLIMA	,	8.40	,	0.00	,	1560	);
+		GenerationUnit	unitMTULUA	=	new	GenerationUnit(	66	,	Global.generationUnitsNames[	66	]	,	genCETG	,	nodeVALLECAU	,	14.19	,	0.00	,	1584	);
+		GenerationUnit	unitMVALLEC1	=	new	GenerationUnit(	67	,	Global.generationUnitsNames[	67	]	,	genEPSG	,	nodeVALLECAU	,	8.50	,	0.00	,	1608	);
+		GenerationUnit	unitMYOPAL1	=	new	GenerationUnit(	68	,	Global.generationUnitsNames[	68	]	,	genTYPG	,	nodeNORDESTE	,	0.00	,	0.00	,	1632	);
+		GenerationUnit	unitM_AMAIME	=	new	GenerationUnit(	69	,	Global.generationUnitsNames[	69	]	,	genEPSG	,	nodeVALLECAU	,	19.90	,	0.00	,	1656	);
+		GenerationUnit	unitM_PROVIDEN	=	new	GenerationUnit(	70	,	Global.generationUnitsNames[	70	]	,	genDLRG	,	nodeVALLECAU	,	19.90	,	0.00	,	1680	);
+		GenerationUnit	unitPAGUA	=	new	GenerationUnit(	71	,	Global.generationUnitsNames[	71	]	,	genENDG	,	nodePAGUA	,	600.00	,	74.00	,	1704	);
+		GenerationUnit	unitPAIPA1	=	new	GenerationUnit(	72	,	Global.generationUnitsNames[	72	]	,	genHIMG	,	nodeNORDESTE	,	31.00	,	0.00	,	1728	);
+		GenerationUnit	unitPAIPA2	=	new	GenerationUnit(	73	,	Global.generationUnitsNames[	73	]	,	genHIMG	,	nodeNORDESTE	,	70.00	,	0.00	,	1752	);
+		GenerationUnit	unitPAIPA3	=	new	GenerationUnit(	74	,	Global.generationUnitsNames[	74	]	,	genHIMG	,	nodeNORDESTE	,	70.00	,	0.00	,	1776	);
+		GenerationUnit	unitPAIPA4	=	new	GenerationUnit(	75	,	Global.generationUnitsNames[	75	]	,	genHIMG	,	nodeNORDESTE	,	150.00	,	0.00	,	1800	);
+		GenerationUnit	unitPALENQ3	=	new	GenerationUnit(	76	,	Global.generationUnitsNames[	76	]	,	genESSG	,	nodeNORDESTE	,	13.61	,	0.00	,	1824	);
+		GenerationUnit	unitPLAYAS	=	new	GenerationUnit(	77	,	Global.generationUnitsNames[	77	]	,	genEPMG	,	nodeANTIOQUI	,	201.00	,	55.00	,	1848	);
+		GenerationUnit	unitPORCE2	=	new	GenerationUnit(	78	,	Global.generationUnitsNames[	78	]	,	genEPMG	,	nodeANTIOQUI	,	405.00	,	75.00	,	1872	);
+		GenerationUnit	unitPORCE3	=	new	GenerationUnit(	79	,	Global.generationUnitsNames[	79	]	,	genEPMG	,	nodeANTIOQUI	,	660.00	,	125.00	,	1896	);
+		GenerationUnit	unitPORCE3P	=	new	GenerationUnit(	80	,	Global.generationUnitsNames[	80	]	,	genEPMG	,	nodeANTIOQUI	,	660.00	,	125.00	,	1920	);
+		GenerationUnit	unitPRADO	=	new	GenerationUnit(	81	,	Global.generationUnitsNames[	81	]	,	genEPSG	,	nodeTOLIMA	,	46.00	,	8.00	,	1944	);
+		GenerationUnit	unitPROELEC1	=	new	GenerationUnit(	82	,	Global.generationUnitsNames[	82	]	,	genPRLG	,	nodeBOLIVAR	,	45.00	,	0.00	,	1968	);
+		GenerationUnit	unitPROELEC2	=	new	GenerationUnit(	83	,	Global.generationUnitsNames[	83	]	,	genPRLG	,	nodeBOLIVAR	,	45.00	,	0.00	,	1992	);
+		GenerationUnit	unitRPIEDRAS	=	new	GenerationUnit(	84	,	Global.generationUnitsNames[	84	]	,	genCIVG	,	nodeANTIOQUI	,	19.90	,	0.00	,	2016	);
+		GenerationUnit	unitSALVAJINA	=	new	GenerationUnit(	85	,	Global.generationUnitsNames[	85	]	,	genEPSG	,	nodeVALLECAU	,	285.00	,	0.00	,	2040	);
+		GenerationUnit	unitSANCARLOS	=	new	GenerationUnit(	86	,	Global.generationUnitsNames[	86	]	,	genISGG	,	nodeSANCARLO	,	1240.00	,	10.00	,	2064	);
+		GenerationUnit	unitSANFRANCISCO	=	new	GenerationUnit(	87	,	Global.generationUnitsNames[	87	]	,	genCHCG	,	nodeCQR	,	135.00	,	12.00	,	2088	);
+		GenerationUnit	unitTASAJER1	=	new	GenerationUnit(	88	,	Global.generationUnitsNames[	88	]	,	genTRMG	,	nodeNORDESTE	,	155.00	,	0.00	,	2112	);
+		GenerationUnit	unitTCANDEL1	=	new	GenerationUnit(	89	,	Global.generationUnitsNames[	89	]	,	genTCDG	,	nodeBOLIVAR	,	157.00	,	0.00	,	2136	);
+		GenerationUnit	unitTCANDEL2	=	new	GenerationUnit(	90	,	Global.generationUnitsNames[	90	]	,	genTCDG	,	nodeBOLIVAR	,	157.00	,	0.00	,	2160	);
+		GenerationUnit	unitTCENTRO1	=	new	GenerationUnit(	91	,	Global.generationUnitsNames[	91	]	,	genISGG	,	nodeMAGDAMED	,	276.00	,	0.00	,	2184	);
+		GenerationUnit	unitTEBSA	=	new	GenerationUnit(	92	,	Global.generationUnitsNames[	92	]	,	genGECG	,	nodeATLANTIC	,	791.00	,	0.00	,	2208	);
+		GenerationUnit	unitTEMCALI	=	new	GenerationUnit(	93	,	Global.generationUnitsNames[	93	]	,	genTEMG	,	nodeVALLECAU	,	229.00	,	0.00	,	2232	);
+		GenerationUnit	unitTPIEDRAS	=	new	GenerationUnit(	94	,	Global.generationUnitsNames[	94	]	,	genTRPG	,	nodeTOLIMA	,	3.75	,	0.00	,	2256	);
+		GenerationUnit	unitTSIERRA	=	new	GenerationUnit(	95	,	Global.generationUnitsNames[	95	]	,	genEPMG	,	nodeMAGDAMED	,	460.00	,	0.00	,	2280	);
+		GenerationUnit	unitTVALLE	=	new	GenerationUnit(	96	,	Global.generationUnitsNames[	96	]	,	genEPSG	,	nodeVALLECAU	,	205.00	,	0.00	,	2304	);
+		GenerationUnit	unitTYOPAL2	=	new	GenerationUnit(	97	,	Global.generationUnitsNames[	97	]	,	genTYPG	,	nodeNORDESTE	,	30.00	,	0.00	,	2328	);
+		GenerationUnit	unitURRA	=	new	GenerationUnit(	98	,	Global.generationUnitsNames[	98	]	,	genEMUG	,	nodeCERROMAT	,	338.00	,	63.00	,	2352	);
+		GenerationUnit	unitVENEZUE1	=	new	GenerationUnit(	99	,	Global.generationUnitsNames[	99	]	,	genISGG	,	nodeCUATRICENTENARIO	,	150.00	,	0.00	,	2376	);
+		GenerationUnit	unitZIPAEMG2	=	new	GenerationUnit(	100	,	Global.generationUnitsNames[	100	]	,	genENDG	,	nodeBOGOTA	,	34.00	,	0.00	,	2400	);
+		GenerationUnit	unitZIPAEMG3	=	new	GenerationUnit(	101	,	Global.generationUnitsNames[	101	]	,	genENDG	,	nodeBOGOTA	,	63.00	,	0.00	,	2424	);
+		GenerationUnit	unitZIPAEMG4	=	new	GenerationUnit(	102	,	Global.generationUnitsNames[	102	]	,	genENDG	,	nodeBOGOTA	,	64.00	,	0.00	,	2448	);
+		GenerationUnit	unitZIPAEMG5	=	new	GenerationUnit(	103	,	Global.generationUnitsNames[	103	]	,	genENDG	,	nodeBOGOTA	,	64.00	,	0.00	,	2472	);
+
+		//
+		// Transmisores
+		//
+		Transmitter	transCENS	=	new	Transmitter(	0	,	Global.gridcosNames[	0	]	,	0	);
+		Transmitter	transEEB	=	new	Transmitter(	1	,	Global.gridcosNames[	1	]	,	24	);
+		Transmitter	transISA	=	new	Transmitter(	2	,	Global.gridcosNames[	2	]	,	48	);
+		Transmitter	transISA_EEB	=	new	Transmitter(	3	,	Global.gridcosNames[	3	]	,	72	);
+		Transmitter	transISA_TRANSELCA	=	new	Transmitter(	4	,	Global.gridcosNames[	4	]	,	96	);
+		Transmitter	transTRANSELCA	=	new	Transmitter(	5	,	Global.gridcosNames[	5	]	,	120	);
+		
+		//
+		// Líneas de transmisión
+		//
+		TransmissionLine	lineANTCQR	=	new	TransmissionLine(	0	,	transISA	,	nodeANTIOQUI	,	nodeCQR	,	Global.linesNames[	0	]	,	460.00	,	6.93	,	Global.linesCod[	0	]	,	0	);
+		TransmissionLine	lineANTSCA	=	new	TransmissionLine(	1	,	transISA	,	nodeANTIOQUI	,	nodeSANCARLO	,	Global.linesNames[	1	]	,	1930.00	,	19.05	,	Global.linesCod[	1	]	,	24	);
+		TransmissionLine	lineANTMAG	=	new	TransmissionLine(	2	,	transISA	,	nodeANTIOQUI	,	nodeMAGDAMED	,	Global.linesNames[	2	]	,	402.50	,	6.78	,	Global.linesCod[	2	]	,	48	);
+		TransmissionLine	lineATLCDS	=	new	TransmissionLine(	3	,	transISA	,	nodeATLANTIC	,	nodeCORDOSUC	,	Global.linesNames[	3	]	,	2437.50	,	10.07	,	Global.linesCod[	3	]	,	72	);
+		TransmissionLine	lineBOGMAG	=	new	TransmissionLine(	4	,	transISA	,	nodeBOGOTA	,	nodeMAGDAMED	,	Global.linesNames[	4	]	,	1405.14	,	11.77	,	Global.linesCod[	4	]	,	96	);
+		TransmissionLine	lineBOGMET	=	new	TransmissionLine(	5	,	transEEB	,	nodeBOGOTA	,	nodeMETA	,	Global.linesNames[	5	]	,	552.00	,	9.10	,	Global.linesCod[	5	]	,	120	);
+		TransmissionLine	lineBOLATL	=	new	TransmissionLine(	6	,	transISA_TRANSELCA	,	nodeBOLIVAR	,	nodeATLANTIC	,	Global.linesNames[	6	]	,	481.58	,	10.03	,	Global.linesCod[	6	]	,	144	);
+		TransmissionLine	lineBOLGCM	=	new	TransmissionLine(	7	,	transISA	,	nodeBOLIVAR	,	nodeGCM	,	Global.linesNames[	7	]	,	952.50	,	4.91	,	Global.linesCod[	7	]	,	168	);
+		TransmissionLine	lineCAUECU	=	new	TransmissionLine(	8	,	transISA_EEB	,	nodeCAUCANAR	,	nodeECUADOR220	,	Global.linesNames[	8	]	,	972.90	,	13.85	,	Global.linesCod[	8	]	,	192	);
+		TransmissionLine	lineCERMAG	=	new	TransmissionLine(	9	,	transISA	,	nodeCERROMAT	,	nodeMAGDAMED	,	Global.linesNames[	9	]	,	1250.00	,	5.00	,	Global.linesCod[	9	]	,	216	);
+		TransmissionLine	lineCERANT	=	new	TransmissionLine(	10	,	transISA	,	nodeCERROMAT	,	nodeANTIOQUI	,	Global.linesNames[	10	]	,	952.50	,	5.13	,	Global.linesCod[	10	]	,	240	);
+		TransmissionLine	lineCHIBOG	=	new	TransmissionLine(	11	,	transISA	,	nodeCHIVOR	,	nodeBOGOTA	,	Global.linesNames[	11	]	,	911.26	,	13.72	,	Global.linesCod[	11	]	,	264	);
+		TransmissionLine	lineCHINOR	=	new	TransmissionLine(	12	,	transISA	,	nodeCHIVOR	,	nodeNORDESTE	,	Global.linesNames[	12	]	,	441.60	,	6.84	,	Global.linesCod[	12	]	,	288	);
+		TransmissionLine	lineCORCER	=	new	TransmissionLine(	13	,	transISA	,	nodeCORDOSUC	,	nodeCERROMAT	,	Global.linesNames[	13	]	,	2440.00	,	10.03	,	Global.linesCod[	13	]	,	312	);
+		TransmissionLine	lineCQRTOL	=	new	TransmissionLine(	14	,	transISA	,	nodeCQR	,	nodeTOLIMA	,	Global.linesNames[	14	]	,	390.08	,	6.98	,	Global.linesCod[	14	]	,	336	);
+		TransmissionLine	lineCQRVAL	=	new	TransmissionLine(	15	,	transISA	,	nodeCQR	,	nodeVALLECAU	,	Global.linesNames[	15	]	,	1143.10	,	17.33	,	Global.linesCod[	15	]	,	360	);
+		TransmissionLine	lineGCMATL	=	new	TransmissionLine(	16	,	transTRANSELCA	,	nodeGCM	,	nodeATLANTIC	,	Global.linesNames[	16	]	,	544.50	,	10.25	,	Global.linesCod[	16	]	,	384	);
+		TransmissionLine	lineGCMNOR	=	new	TransmissionLine(	17	,	transISA	,	nodeGCM	,	nodeNORDESTE	,	Global.linesNames[	17	]	,	952.50	,	4.91	,	Global.linesCod[	17	]	,	408	);
+		TransmissionLine	lineGCMCUA	=	new	TransmissionLine(	18	,	transISA	,	nodeGCM	,	nodeCUATRICENTENARIO	,	Global.linesNames[	18	]	,	202.86	,	3.30	,	Global.linesCod[	18	]	,	432	);
+		TransmissionLine	lineHUICAU	=	new	TransmissionLine(	19	,	transISA_EEB	,	nodeHUILACAQ	,	nodeCAUCANAR	,	Global.linesNames[	19	]	,	846.40	,	16.62	,	Global.linesCod[	19	]	,	456	);
+		TransmissionLine	lineHUITOL	=	new	TransmissionLine(	20	,	transISA	,	nodeHUILACAQ	,	nodeTOLIMA	,	Global.linesNames[	20	]	,	205.85	,	3.41	,	Global.linesCod[	20	]	,	480	);
+		TransmissionLine	lineLAMBOG	=	new	TransmissionLine(	21	,	transISA	,	nodeLAMIEL	,	nodeBOGOTA	,	Global.linesNames[	21	]	,	454.48	,	6.93	,	Global.linesCod[	21	]	,	504	);
+		TransmissionLine	lineLAMTOL	=	new	TransmissionLine(	22	,	transISA	,	nodeLAMIEL	,	nodeTOLIMA	,	Global.linesNames[	22	]	,	458.16	,	6.94	,	Global.linesCod[	22	]	,	528	);
+		TransmissionLine	lineMAGSCA	=	new	TransmissionLine(	23	,	transISA	,	nodeMAGDAMED	,	nodeSANCARLO	,	Global.linesNames[	23	]	,	1436.76	,	8.35	,	Global.linesCod[	23	]	,	552	);
+		TransmissionLine	lineMAGNOR	=	new	TransmissionLine(	24	,	transISA	,	nodeMAGDAMED	,	nodeNORDESTE	,	Global.linesNames[	24	]	,	1550.04	,	14.99	,	Global.linesCod[	24	]	,	576	);
+		TransmissionLine	lineNORCOR	=	new	TransmissionLine(	25	,	transCENS	,	nodeNORDESTE	,	nodeCOROZO	,	Global.linesNames[	25	]	,	346.38	,	9.02	,	Global.linesCod[	25	]	,	600	);
+		TransmissionLine	linePAGBOG	=	new	TransmissionLine(	26	,	transEEB	,	nodePAGUA	,	nodeBOGOTA	,	Global.linesNames[	26	]	,	956.80	,	13.91	,	Global.linesCod[	26	]	,	624	);
+		TransmissionLine	lineSANBOG	=	new	TransmissionLine(	27	,	transISA	,	nodeSANCARLO	,	nodeBOGOTA	,	Global.linesNames[	27	]	,	445.28	,	6.97	,	Global.linesCod[	27	]	,	648	);
+		TransmissionLine	lineSANCQR	=	new	TransmissionLine(	28	,	transISA	,	nodeSANCARLO	,	nodeCQR	,	Global.linesNames[	28	]	,	446.20	,	6.88	,	Global.linesCod[	28	]	,	672	);
+		TransmissionLine	lineSANVAL	=	new	TransmissionLine(	29	,	transISA	,	nodeSANCARLO	,	nodeVALLECAU	,	Global.linesNames[	29	]	,	1000.00	,	5.22	,	Global.linesCod[	29	]	,	696	);
+		TransmissionLine	lineTOLBOG	=	new	TransmissionLine(	30	,	transISA	,	nodeTOLIMA	,	nodeBOGOTA	,	Global.linesNames[	30	]	,	882.28	,	13.86	,	Global.linesCod[	30	]	,	720	);
+		TransmissionLine	lineVALCAU	=	new	TransmissionLine(	31	,	transISA	,	nodeVALLECAU	,	nodeCAUCANAR	,	Global.linesNames[	31	]	,	461.38	,	7.00	,	Global.linesCod[	31	]	,	744	);
+
+		public void marketDefine(){
+			//
+			// Lista de nodos del sistema
+			//
+			nodes.add(	nodeANTIOQUI	);	nodes.add(	nodeATLANTIC	);	nodes.add(	nodeBOGOTA		);	nodes.add(	nodeBOLIVAR		);	nodes.add(	nodeCAUCANAR	);			
+			nodes.add(	nodeCERROMAT	);  nodes.add(	nodeCHIVOR		);	nodes.add(	nodeCORDOSUC	);	nodes.add(	nodeCQR			);	nodes.add(	nodeGCM			);			
+			nodes.add(	nodeHUILACAQ	);	nodes.add(	nodeLAMIEL		);	nodes.add(	nodeMAGDAMED	);	nodes.add(	nodeMETA		);	nodes.add(	nodeNORDESTE	);
+			nodes.add(	nodePAGUA		);	nodes.add(	nodeSANCARLO	);	nodes.add(	nodeTOLIMA		); 	nodes.add(	nodeVALLECAU	);	nodes.add(	nodeCOROZO		);			
+			nodes.add(nodeCUATRICENTENARIO);nodes.add(	nodeECUADOR220	);
+	
+			//
+			// Lista de generadores del sistema
+			//
+			generators.add(	genEPSG	);	generators.add(	genGECG	);	generators.add(	genENDG	);	generators.add(	genCHVG	);	generators.add(	genDLRG	);
+			generators.add(	genESSG	);	generators.add(	genCVAG	);	generators.add(	genCHCG	);	generators.add(	genECUG	);	generators.add(	genFRSG	);
+			generators.add(	genGNCG	);	generators.add(	genEPMG	);	generators.add(	genISGG	);	generators.add(	genADCG	);	generators.add(	genEEPG	);
+			generators.add(	genLCSG	);	generators.add(	genCDNG	);	generators.add(	genCTMG	);	generators.add(	genEECG	);	generators.add(	genFACG	);
+			generators.add(	genERCG	);	generators.add(	genEGCG	);	generators.add(	genCIVG	);	generators.add(	genHLAG	);	generators.add(	genGEEG	);
+			generators.add(	genCETG	);	generators.add(	genTYPG	);	generators.add(	genHIMG	);	generators.add(	genPRLG	);	generators.add(	genTRMG	);
+			generators.add(	genTCDG	);	generators.add(	genTEMG	);	generators.add(	genTRPG	);	generators.add(	genEMUG	);	
+			
+			//
+			// Lista de unidades de generación del sistema
+			//
+			generationUnits.add(	unitALBAN		);	generationUnits.add(	unitBARRANQ3	);	generationUnits.add(	unitBARRANQ4	);	generationUnits.add(	unitBETANIA		);	generationUnits.add(	unitCALIMA1		);
+			generationUnits.add(	unitCHIVOR		);	generationUnits.add(	unitCOINCAUCA	);	generationUnits.add(	unitCOROZO1		);	generationUnits.add(	unitCSANCARLOS	);	generationUnits.add(	unitCTGEMG1		);	
+			generationUnits.add(	unitCTGEMG2		);	generationUnits.add(	unitCTGEMG3		);	generationUnits.add(	unitCVALLEC1	);	generationUnits.add(	unitDORADA1		);	generationUnits.add(	unitECUADOR11	);
+			generationUnits.add(	unitECUADOR12	);	generationUnits.add(	unitECUADOR13	);	generationUnits.add(	unitECUADOR14	);	generationUnits.add(	unitECUADOR21	);	generationUnits.add(	unitECUADOR22	);	
+			generationUnits.add(	unitECUADOR23	);	generationUnits.add(	unitECUADOR24	);	generationUnits.add(	unitESMERALDA	);	generationUnits.add(	unitFLORES1		);	generationUnits.add(	unitFLORES21	);
+			generationUnits.add(	unitFLORES3		);	generationUnits.add(	unitFLORESIVB	);	generationUnits.add(	unitFLORIDA2	);	generationUnits.add(	unitGUAJIR11	);	generationUnits.add(	unitGUAJIR21	);
+			generationUnits.add(	unitGUATAPE		);	generationUnits.add(	unitGUATRON		);	generationUnits.add(	unitGUAVIO		);	generationUnits.add(	unitINSULA		);	generationUnits.add(	unitJAGUAS		);
+			generationUnits.add(	unitLATASAJERA	);	generationUnits.add(	unitMAGUAFRE	);	generationUnits.add(	unitMANTIOQ1	);	generationUnits.add(	unitMBELMONTE	);	generationUnits.add(	unitMBOGOTA1	);
+			generationUnits.add(	unitMCALDERAS	);	generationUnits.add(	unitMCARUQUIA	);	generationUnits.add(	unitMCASCADA1	);	generationUnits.add(	unitMCAUCAN1	);	generationUnits.add(	unitMCAUCAN2	);
+			generationUnits.add(	unitMCIMARR1	);	generationUnits.add(	unitMCQR1		);	generationUnits.add(	unitMCUNDINAMARCA);	generationUnits.add(	unitMCURRUCU	);	generationUnits.add(	unitMELBOSQUE	);
+			generationUnits.add(	unitMEMCALI		);	generationUnits.add(	unitMERILEC1	);	generationUnits.add(	unitMGUANAQUITA	);	generationUnits.add(	unitMHUILAQ1	);	generationUnits.add(	unitMIEL1		);
+			generationUnits.add(	unitMJEPIRAC	);	generationUnits.add(	unitMMORRO1		);	generationUnits.add(	unitMMORRO2		);	generationUnits.add(	unitMNLIBARE	);	generationUnits.add(	unitMNORDE1		);
+			generationUnits.add(	unitMPRADO4		);	generationUnits.add(	unitMRIOMAYO	);	generationUnits.add(	unitMSANTANA	);	generationUnits.add(	unitMSANTARITA	);	generationUnits.add(	unitMSANTIAGO	);
+			generationUnits.add(	unitMTOLIMA1	);	generationUnits.add(	unitMTULUA		);	generationUnits.add(	unitMVALLEC1	);	generationUnits.add(	unitMYOPAL1		);	generationUnits.add(	unitM_AMAIME	);
+			generationUnits.add(	unitM_PROVIDEN	);	generationUnits.add(	unitPAGUA		);	generationUnits.add(	unitPAIPA1		);	generationUnits.add(	unitPAIPA2		);	generationUnits.add(	unitPAIPA3		);
+			generationUnits.add(	unitPAIPA4		);	generationUnits.add(	unitPALENQ3		);	generationUnits.add(	unitPLAYAS		);	generationUnits.add(	unitPORCE2		);	generationUnits.add(	unitPORCE3		);
+			generationUnits.add(	unitPORCE3P		);	generationUnits.add(	unitPRADO		);	generationUnits.add(	unitPROELEC1	);	generationUnits.add(	unitPROELEC2	);	generationUnits.add(	unitRPIEDRAS	);
+			generationUnits.add(	unitSALVAJINA	);	generationUnits.add(	unitSANCARLOS	);	generationUnits.add(	unitSANFRANCISCO);	generationUnits.add(	unitTASAJER1	);	generationUnits.add(	unitTCANDEL1	);
+			generationUnits.add(	unitTCANDEL2	);	generationUnits.add(	unitTCENTRO1	);	generationUnits.add(	unitTEBSA		);	generationUnits.add(	unitTEMCALI		);	generationUnits.add(	unitTPIEDRAS	);
+			generationUnits.add(	unitTSIERRA		);	generationUnits.add(	unitTVALLE		);	generationUnits.add(	unitTYOPAL2		);	generationUnits.add(	unitURRA		);	generationUnits.add(	unitVENEZUE1	);
+			generationUnits.add(	unitZIPAEMG2	);	generationUnits.add(	unitZIPAEMG3	);	generationUnits.add(	unitZIPAEMG4	);	generationUnits.add(	unitZIPAEMG5	);
+	
+	
+			//
+			// Lista de transmisores del sistema
+			//
+			transmitters.add(	transCENS			);
+			transmitters.add(	transEEB			);
+			transmitters.add(	transISA			);
+			transmitters.add(	transISA_EEB		);
+			transmitters.add(	transISA_TRANSELCA	);
+			transmitters.add(	transTRANSELCA		);
+			
+			
+			//
+			// Líneas de transmisión del sistema
+			//
+			transmissionLines.add(	lineANTCQR	);	transmissionLines.add(	lineANTSCA	);	transmissionLines.add(	lineANTMAG	);	transmissionLines.add(	lineATLCDS	);	transmissionLines.add(	lineBOGMAG	);	
+			transmissionLines.add(	lineBOGMET	);	transmissionLines.add(	lineBOLATL	);	transmissionLines.add(	lineBOLGCM	);	transmissionLines.add(	lineCAUECU	);	transmissionLines.add(	lineCERMAG	);	
+			transmissionLines.add(	lineCERANT	);	transmissionLines.add(	lineCHIBOG	);	transmissionLines.add(	lineCHINOR	);	transmissionLines.add(	lineCORCER	);	transmissionLines.add(	lineCQRTOL	);	
+			transmissionLines.add(	lineCQRVAL	);	transmissionLines.add(	lineGCMATL	);	transmissionLines.add(	lineGCMNOR	);	transmissionLines.add(	lineGCMCUA	);	transmissionLines.add(	lineHUICAU	);	
+			transmissionLines.add(	lineHUITOL	);	transmissionLines.add(	lineLAMBOG	);	transmissionLines.add(	lineLAMTOL	);	transmissionLines.add(	lineMAGSCA	);	transmissionLines.add(	lineMAGNOR	);	
+			transmissionLines.add(	lineNORCOR	);	transmissionLines.add(	linePAGBOG	);	transmissionLines.add(	lineSANBOG	);	transmissionLines.add(	lineSANCQR	);	transmissionLines.add(	lineSANVAL	);	
+			transmissionLines.add(	lineTOLBOG	);	transmissionLines.add(	lineVALCAU	);
+		}
+		Generator genco1 = new Generator("GENCO1");
+		Generator genco2 = new Generator("GENCO2");
+		Generator genco3 = new Generator("GENCO3");
+		//Generator gen4 = new Generator("GENCO4");
+		//Generator gen5 = new Generator("GENCO5");
+		//Generator gen6 = new Generator("GENCO6");
+		//Generator gen7 = new Generator("GENCO7");
+		//Generator gen8 = new Generator("GENCO8");
+		
+		// Comercializadores
+		Retailer retailco1 = new Retailer("RETAILER1",1);
+		Retailer retailco2 = new Retailer("RETAILER2",2);
+		Retailer retailco3 = new Retailer("RETAILER3",3);
+		//Retailer ret4 = new Retailer("RETAILER4");
+		//Retailer ret5 = new Retailer("RETAILER5");
+		//Retailer ret6 = new Retailer("RETAILER6");
+		//Retailer ret7 = new Retailer("RETAILER7");
+		//Retailer ret8 = new Retailer("RETAILER8");
+			
+		// Transmisores
+		Transmitter gridco1 = new Transmitter("GRIDCO1");
+		Transmitter gridco2 = new Transmitter("GRIDCO2");
+		Transmitter gridco3 = new Transmitter("GRIDCO3");
+		//Transmitter trans4 = new Transmitter("GRIDCO4");
+		//Transmitter trans5 = new Transmitter("GRIDCO5");
+		//Transmitter trans6 = new Transmitter("GRIDCO6");
+		//Transmitter trans7 = new Transmitter("GRIDCO7");
+		//Transmitter trans8 = new Transmitter("GRIDCO8");
+		/*
+		// Unidades de generación
+		// Constructor con id, nombre, nodo, capacidad efectiva, costo de generación
+		GenerationUnit unit1 = new GenerationUnit(1,"U1",1,140,7.5);
+		GenerationUnit unit2 = new GenerationUnit(2,"U2",1,285,6.0);
+		GenerationUnit unit3 = new GenerationUnit(3,"U3",2,90,14.0);
+		GenerationUnit unit4 = new GenerationUnit(4,"U4",3,85,10.0);
+		
+		// Líneas de transmisión
+		// Constructor con identificador, propietario, nodo origen, nodo destino, 
+		// susceptancia y límite de flujo de potencia
+		TransmissionLine line1 = new TransmissionLine(1,gridco1,1,2,5,126);	// nodo 1 - nodo 2
+		TransmissionLine line2 = new TransmissionLine(2,gridco2,1,3,5,250);	// nodo 1 - nodo 3
+		TransmissionLine line3 = new TransmissionLine(3,gridco3,2,3,10,130); // nodo 2 - nodo 3
+		
+		// generation contracts
+		GenerationContract contractG2U2R1 = new GenerationContract("C1",genco2,unit2,retailco1,
+				new double[]{50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0},
+				new double[]{4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,4.0,},
+				1,1,1,365);
+		GenerationContract contractG2U2R3 = new GenerationContract("C2",genco2,unit2,retailco3,
+				new double[]{160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0,160.0},
+				new double[]{5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0},
+				1,3,1,365);
+		GenerationContract contractG2U2R2 = new GenerationContract("C3",genco2,unit2,retailco2,
+				new double[]{60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0,60.0},
+				new double[]{5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5},
+				1,2,1,365);
+		GenerationContract contractG1U1R3 = new GenerationContract("C4",genco1,unit1,retailco3,
+				new double[]{120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0,120.0},
+				new double[]{6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5},
+				1,3,1,365);
+				*/
+		//
+		/* DATOS */
+		//
+		// Límite inferior para el ángulo de voltaje en cada nodo
+		double[] angleLb	= Global.factory.repVec(-Double.MAX_VALUE, 24*Global.nNodes);
+		
+		// Límite superior para el ángulo de voltaje en cada nodo
+		double[] angleUb    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,
+				Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE,Double.MAX_VALUE
+		};
+				
+				
+								/*360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360,
+							   	360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 360};*/
+
+		
+		
+		
+		// Límite inferior para los flujos en el despacho ideal
+		double[] flowLb	= Global.factory.repVec(-Double.MAX_VALUE, 24*Global.nLines);
+				
+		// Límite superior para los flujos en el despacho ideal
+		double[] flowUb = Global.factory.repVec(Double.MAX_VALUE, 24*Global.nLines);
+		
+		// Límite inferior para la demanda no atendida en cada nodo
+		double[] unservedLb	= Global.factory.repVec(0.0, 24*Global.nNodes);
+		
+		// Límite superior para la demanda no atendida en cada nodo
+		double[] unservedUb = Global.factory.repVec(Double.MAX_VALUE, 24*Global.nNodes);
+		
+		// Límite inferior para la potencia generada por cada unidad
+		double [] lowPowerLimit = Global.factory.repVec(0.0, 24*Global.nUnits);
+				
+		// Costo de la demanda no atendida en cada nodo
+		double [] unsDemandCost = Global.factory.repVec(4000000.0, 24*Global.nNodes);
+		
+		// Susceptancia de cada línea
+		//double [] susceptance = {200,200,200,200,200,200,200,200,200,200,200};
+		//double [] susceptance = {5,5,5,5,5,5,5,5,5,5,5};
+		double [] susceptance = {6.93,	19.05, 	6.78,	10.07,	11.77,	9.10,	10.03,	4.91,	13.85,	5.00,
+								 5.13,	13.72,	6.84,	10.03,	6.98,	17.33,	10.25,	4.91,	3.30,	16.62,
+								 3.41,	6.93,	6.94,	8.35,	14.99,	9.02,	13.91,	6.97,	6.88,	5.22,
+								 13.86,	7.00	};
+		
+		// Límite del flujo de potencia para cada línea
+		double [] powerLimit = {460.00,	1930.00,	402.50,	2437.50,	1405.14,	552.00,		481.58,	952.50,	972.90,	1250.00,
+								952.50,	911.26,		441.60,	2440.00,	390.08,		1143.10,	544.50,	952.50,	202.86,	846.40,
+								205.85,	454.48,		458.16,	1436.76,	1550.04,	346.38,		956.80,	445.28,	446.20,	1000.00,
+								882.28,	461.38	};
+		
+		//double [] susceptance 			= operator.getSusceptances();		// susceptances of all lines
+		//double [] powerLimit 			= operator.getPowerFlowLimits();	// power flows limits of all lines
+		
+		double [][] powerDemandVector   = new double[Global.nNodes][24];	// matrix of demand by hour by node
+		double [][] dailyPowerBid		= new double[Global.nUnits][24];	// daily offer of price all generators
+		double [][] powerBidPrice		= new double[Global.nUnits][24];	// daily offer of power of all generators for each hour
+		
+		// result of dispatch process
+		double [] generation	 = new double[24*Global.nUnits];	// hourly programmed generation
+		double [] nodalPrices	 = new double[24*Global.nNodes];
+		double [] unservedDemand = new double[24*Global.nNodes];	// hourly unserved demand
+		double [] flows 		 = new double[24*Global.nLines];	// flow of power by line by hour
+		double dispatchCost		= 0.0;						// cost value of daily dispatch
+		//double [][] dispatch = {generation,nodalPrices,unservedDemand,flows,dispatchCost};
+				
+		//double [] unitCosts 		= {7.5,6.0,14.0,10.0}; 
+		//double [] unitCosts 		= operator.getGenerationCosts();
+		//double [][] unitCostMatrix 	= Global.factory.repMat(unitCosts,4,24);
+		//double [] generationCost 	= Global.factory.mat2vec(unitCostMatrix,4,24);
+		
+		//data.printVector(generationCost);
+		
+		//
+		/* STRINGS PARA LAS VARIABLES DEL PROBLEMA DE OPTIMIZACIÓN */
+		//
+		// Variables para la generación
+		String[] powergen = new String[24*Global.nUnits];
+		
+		public void powergenDefine(){
+			int j = 0; 
+			for(int i = 0; i < Global.nUnits; i++){
+				for(int h = 0; h < 24; h++){
+					powergen[j] = "GP_"+Global.generationUnitsNames[i]+"_"+h;
+					j = j + 1;
+				}	
+			}
+		}
+				
+		// Variables para el ángulo de voltaje
+		String[] anglevol = new String[24*Global.nNodes];
+		
+		public void anglevolDefine(){
+			int j = 0; 
+			for(int i = 0; i < Global.nNodes; i++){
+				for(int h = 0; h < 24; h++){
+					anglevol[j] = "VA_"+Global.nodesNames[i]+"_"+h;
+					j = j +1;
+				}	
+			}
+		}
+		
+		
+		// Variables para los flujos
+		String[] flowsPot = new String[24*Global.nLines];
+		
+		public void flowsPotDefine(){
+			int j = 0; 
+			for(int i = 0; i < Global.nLines; i++){
+				for(int h = 0; h < 24; h++){
+					flowsPot[j] = "FL_"+Global.linesNames[i]+"_"+h;
+					j = j +1;
+				}	
+			}
+		}
+			
+		// Variables para la demanda no atendida
+		String[] unserved = new String[24*Global.nNodes];
+		
+		public void unservedDefine(){
+			int j = 0; 
+			for(int i = 0; i < Global.nNodes; i++){
+				for(int h = 0; h < 24; h++){
+					unserved[j] = "UD_"+Global.nodesNames[i]+"_"+h;
+					j = j +1;
+				}	
+			}
+		}
+		
+		
+			//
+			// variables para los despachos
+			//
+			// Matriz de variables
+			//IloNumVar[][] varI = new IloNumVar[3][]; // despacho ideal
+			//IloNumVar[][] varI = new IloNumVar[2][]; // despacho ideal
+			//IloNumVar[][] varR = new IloNumVar[3][]; // despacho real
+			
+			IloNumVar[][] varI = new IloNumVar[2][]; // despacho ideal
+			IloNumVar[][] varR = new IloNumVar[3][]; // despacho real
+			
+			IloNumVar[][] varIN = new IloNumVar[3][]; // despacho ideal flujos
+			
+			// Matriz para guardar las restricciones del problema del despacho ideal
+			IloRange[][]  rngIN = new IloRange[1][];
+			
+			public void rngINDefine(){
+				rngIN[0] = new IloRange[24*Global.nNodes];
+				//rngIN[0] = new IloRange[24];
+			}
+			
+			IloRange[][]  rngI = new IloRange[1][];
+			
+			public void rngIDefine(){
+				rngI[0] = new IloRange[24];
+			}
+			
+			// Matriz para guardar las restricciones del problema del despacho real
+			IloRange[][]  rngR = new IloRange[2][];
+			
+			public void rngRDefine(){
+		        rngR[0] = new IloRange[24*Global.nNodes];
+				rngR[1] = new IloRange[2*24*Global.nLines];
+			}
+			
+			//
+			// archivos para leer datos y guardar resultados
+			//	
+			// archivo con los datos de la demanda
+			CsvReader demandReader;// = new CsvReader(Global.demandS);
+			int[] posDem = new int[Global.nNodes];
+			double [][] demand = new double[730][Global.nNodes*25];
+			
+			public void demandDefine(){
+				try
+				{
+					demandReader = new CsvReader(Global.demandS);
+					for (int i = 0; i < Global.nNodes; i++){
+						posDem[i] = i*25;
+					}
+					demand = Global.rw.readCsv(demandReader, 730, Global.nNodes*25, posDem); // matriz con los datos de demanda por nodo por hora
+				}
+				catch(IOException e) 
+		   	 	{
+			   		 e.printStackTrace();
+			   		System.out.println("demandDefine ->"+e);
+			   	}	
+			}
+			// archivo con los datos de la oferta
+			CsvReader supplyReader; //= new CsvReader(Global.supplyS);
+			int[] posSup = new int[Global.nUnits];
+			double [][] supply = new double[730][Global.nUnits*26];
+			
+			public void supplyDefine(){
+				try
+				{
+					supplyReader = new CsvReader(Global.supplyS);
+					for (int i = 0; i < Global.nUnits; i++){
+						posSup[i] = i*26;
+					}
+					supply = Global.rw.readCsv(supplyReader, 730, Global.nUnits*26, posSup); // matriz con los datos de oferta por planta por hora
+				}
+				catch(IOException e) 
+		   	 	{
+			   		 e.printStackTrace();
+			   		System.out.println("supplyDefine ->"+e);
+			   	}	
+			}
+			// 
+			// archivos para escribir los resultados
+			//
+			
+			// archivo para escribir los resultados del despacho ideal
+			CsvWriter idealWriter = new CsvWriter(Global.idealS);
+			
+			// archivo para escribir los resultados del despacho real
+			CsvWriter realWriter = new CsvWriter(Global.realS);
+					
+			// frame para mostrar el el precio de bolsa en cada período de tiempo
+			//Global.scatterGraphic.pack();
+			//Global.scatterGraphic.setForeground(Color.black);
+			//RefineryUtilities.centerFrameOnScreen(Global.scatterGraphic);
+			//Global.scatterGraphic.setVisible(true);
+			
+			// frame para mostrar el el precio de bolsa en cada período de tiempo
+			//Global.stepGraphic.pack();
+        	//Global.stepGraphic.setForeground(Color.black);
+			//RefineryUtilities.centerFrameOnScreen(Global.stepGraphic);
+			//Global.stepGraphic.setVisible(true);
+			/*
+			XYSeriesCollection dataset = new XYSeriesCollection();
+			JFreeChart lineChart = ChartFactory.createXYLineChart("Spot price","Time [hours]","Price [$/Mwh]",dataset,PlotOrientation.VERTICAL,true,true,false);
+			GraphicsStepChart stepGraphic = new GraphicsStepChart("Prueba", dataset, lineChart, "line");
+			stepGraphic.pack();
+        	stepGraphic.setForeground(Color.black);
+			RefineryUtilities.centerFrameOnScreen(stepGraphic);
+			stepGraphic.setVisible(true);
+//			stepGraphic.setSize(600, 500);
+            
+			
+			// Para cada iteración en el tiempo de simulación
+			for (int iteration = 0; iteration < Global.horizon; iteration++){
+								
+				operator.management(iteration, varI, varIN, varR, rngI, rngIN, rngR, powergen, anglevol, 
+						unserved, lowPowerLimit, dailyPowerBid, powerBidPrice, unsDemandCost, powerDemandVector, susceptance,
+						powerLimit, generation, nodalPrices, flows, flowLb, flowUb, unservedDemand, dispatchCost, 
+						angleLb, angleUb, unservedLb, unservedUb, demand, supply, idealWriter, realWriter);	
+				
+							
+	            dataset.removeAllSeries();
+	            
+				//XYSeries[] series = new XYSeries[Global.nNodes]; 
+	            //series.clear();
+	            for(int n = 0; n < Global.nNodes; n++)
+	            {
+	            	XYSeries series = new XYSeries(Global.nodesNames[n],false, true);
+	            	
+		            for(int h = 0; h<24; h++){
+		            	//series.add(DateUtilities.createDate(2010, 1, 1, h+1, 0).getTime(),operator.getIdealDispatch().getNodalPrices()[n][h]);
+		            	series.add(h,operator.getRealDispatch().getNodalPrices()[n][h]);
+		            }
+		            dataset.addSeries(series);
+	            }
+	            
+	            //stepGraphic.setChart(lineChart);
+	            //stepGraphic = new GraphicsStepChart("Prueba", dataset, lineChart, "line");
+	            
+			}
+			
+			
+			idealWriter.close();
+			realWriter.close();
+	    	Global.resultsWriter.close();
+			*/
+			
+			
+			double [] totalSupply = new double[24];
+			
+			public void totalSupplyCalculate(){
+				for(int h = 0; h < 24; h++){
+					for(int i = 0; i < Global.nUnits; i++){
+						totalSupply[h] = totalSupply[h] + operator.getRealDispatch().getGeneration()[i][h];
+					}
+				}
+			}
+			
+			double [] totalDemand = new double[24];
+			
+			public void totalDemandCalculate(){
+				for(int h = 0; h < 24; h++){
+					for(int i = 0; i < Global.nNodes; i++){
+						totalDemand[h] = totalDemand[h] + powerDemandVector[i][h];
+					}
+				}
+			}
+			
+			//System.out.println("Lo que se tiene");
+			//Global.rw.printVector(totalSupply);
+			//Global.rw.printVector(totalDemand);
+			
+			public void printMarketData(){
+				// Imprimir los datos de los generadores
+				System.out.println("\nGeneradores\n");
+				for(int gen = 0; gen < Global.nGencos; gen++)
+				{
+					generators.get(gen).printGenerator();
+				}
+				
+				// Imprimir los datos de las unidades de generación
+				System.out.println("\nUnidades de generación\n");
+				for(int unit = 0; unit < Global.nUnits; unit++)
+				{
+					generationUnits.get(unit).printUnit();
+				}
+				
+				// Imprimir los datos de los nodos
+				System.out.println("\nNodos\n");
+				for(int node = 0; node < Global.nNodes; node++)
+				{
+					nodes.get(node).printNode();
+				}
+				
+				// Imprimir los datos de los transmisores
+				System.out.println("\nTransmisores\n");
+				for(int gridco = 0; gridco < Global.nGridcos; gridco++)
+				{
+					transmitters.get(gridco).printTransmitter();
+				}
+				
+				// Imprimir los datos de las líneas de transmisión
+				System.out.println("\nLíneas de transmisión\n");
+				for(int line = 0; line < Global.nLines; line++)
+				{
+					transmissionLines.get(line).printLine();
+				}
+			}
+
+	@Override
+	public void run() {
+
+		XYSeriesCollection dataset = new XYSeriesCollection();
+		JFreeChart lineChart = ChartFactory.createXYLineChart("Spot price","Time [hours]","Price [$/Mwh]",dataset,PlotOrientation.VERTICAL,true,true,false);
+		GraphicsStepChart stepGraphic = new GraphicsStepChart("Prueba", dataset, lineChart, "line");
+		stepGraphic.pack();
+    	stepGraphic.setForeground(Color.black);
+		RefineryUtilities.centerFrameOnScreen(stepGraphic);
+		stepGraphic.setVisible(true);
+//		stepGraphic.setSize(600, 500);
+        
+		
+		// Para cada iteración en el tiempo de simulación
+		for (int iteration = 0; iteration < Global.horizon; iteration++){
+							
+			operator.management(iteration, varI, varIN, varR, rngI, rngIN, rngR, powergen, anglevol, 
+					unserved, lowPowerLimit, dailyPowerBid, powerBidPrice, unsDemandCost, powerDemandVector, susceptance,
+					powerLimit, generation, nodalPrices, flows, flowLb, flowUb, unservedDemand, dispatchCost, 
+					angleLb, angleUb, unservedLb, unservedUb, demand, supply, idealWriter, realWriter);	
+			
+						
+            dataset.removeAllSeries();
+            
+			//XYSeries[] series = new XYSeries[Global.nNodes]; 
+            //series.clear();
+            for(int n = 0; n < Global.nNodes; n++)
+            {
+            	XYSeries series = new XYSeries(Global.nodesNames[n],false, true);
+            	
+	            for(int h = 0; h<24; h++){
+	            	//series.add(DateUtilities.createDate(2010, 1, 1, h+1, 0).getTime(),operator.getIdealDispatch().getNodalPrices()[n][h]);
+	            	series.add(h,operator.getRealDispatch().getNodalPrices()[n][h]);
+	            }
+	            dataset.addSeries(series);
+            }
+            
+            //stepGraphic.setChart(lineChart);
+            //stepGraphic = new GraphicsStepChart("Prueba", dataset, lineChart, "line");
+            
+		}
+		idealWriter.close();
+		realWriter.close();
+    	Global.resultsWriter.close();
+	}
+	
+	
+	
+	/**
+	 * @param args
+	 * @throws IOException 
+	 */
+	public static void main(String[] args) throws IOException {
+		
+		long startTime = System.currentTimeMillis();
+		Global.mainMenu();
+		long runTime = System.currentTimeMillis() - startTime;
+		System.out.println("Run time: " + runTime + " miliseconds");		
+	}
+
+	
+
+}
+
+/*SwingUtilities.invokeLater(new Runnable()
+{
+     @Override public void run() {
+    	 label.setText(new java.util.Date().toString());
+     }
+});
+label.repaint();
+panelCenter.add(label, BorderLayout.CENTER);
+panelCenter.repaint();
+interfaz.add(panelCenter, BorderLayout.CENTER);
+interfaz.repaint();
+
+//panelCenter.add(label, BorderLayout.CENTER);
+//panelCenter.validate();
+//interfaz.add(panelCenter, BorderLayout.CENTER);
+
+System.out.println("Debería graficar:   " + (iteration + 1));	
+
+// serie a graficar
+XYSeries series = new XYSeries(iteration+1, false, true);
+for(int h = 0; h<24; h++)
+{
+series.add(DateUtilities.createDate(2010, 1, 1, h+1, 0).getTime(),operator.idealDispatch.getNodalPrices()[0][h]);
+//series.add(h,cplex.getDuals(rng[0])[h]);
+}
+
+// definición del conjunto de datos
+XYSeriesCollection dataset = new XYSeriesCollection();
+dataset.addSeries(series);
+JFreeChart stepChart = ChartFactory.createXYStepChart("Spot price","Time [hours]","Price [$/MWh]",dataset,PlotOrientation.VERTICAL,true,true,false); 
+
+// panel para gráficas
+ChartPanel chartPanel = new ChartPanel(stepChart);
+chartPanel.repaint();
+chartPanel.setLayout(new BorderLayout());
+chartPanel.setBackground(Color.red);
+chartPanel.setPreferredSize(new java.awt.Dimension(450, 270));         
+
+// panel para agregar las gráficas dentro de la interfaz
+panelCenter.setLayout(new BorderLayout());
+panelCenter.add(chartPanel, BorderLayout.CENTER);
+panelCenter.repaint();
+interfaz.add(panelCenter, BorderLayout.CENTER);
+
+// panel este
+JPanel east = new JPanel();
+east.setLayout(new BorderLayout());
+JLabel label = new JLabel(String.valueOf(iteration+1));
+east.add(label, BorderLayout.CENTER);
+interfaz.add(east, BorderLayout.EAST);
+
+SwingUtilities.updateComponentTreeUI(interfaz);
+interfaz.validate();
+
+
+System.out.println("Debería graficar:   " + (iteration + 1));	
+*/	   

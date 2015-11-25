@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename type &apos;market.Demand&apos; to &apos;PowerDemand&apos;&#x0D;&#x0A;- Original project: &apos;ftrModel&apos;&#x0D;&#x0A;- Original element: &apos;market.Demand&apos;&#x0D;&#x0A;- Renamed element: &apos;market.PowerDemand&apos;&#x0D;&#x0A;- Update references to refactored element&#x0D;&#x0A;- Update textual occurrences in comments and strings" description="Rename type &apos;Demand&apos;" flags="589830" id="org.eclipse.jdt.ui.rename.type" input="/src&lt;market{Demand.java[Demand" matchStrategy="1" name="PowerDemand" qualified="false" references="true" similarDeclarations="false" stamp="1356914961616" textual="false" version="1.0"/>
+</session>

@@ -1,0 +1,80 @@
+package market;
+
+import java.awt.Color;
+import javax.swing.JFrame;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.xy.XYDataset;
+
+public class GraphicsStepChart extends JFrame
+{	
+	private static final long serialVersionUID = 1L;
+	
+	// elementos d ela interfaz	
+	private XYDataset dataset; 	// conjunto de datos
+	private JFreeChart chart; 	// gráfico
+		
+	// constructor con el título de la pantalla 
+	public GraphicsStepChart(String title) {
+        super(title);
+    }
+	
+	// constructor vacío 
+	public GraphicsStepChart() {}
+	
+	// constructor para una gráfica tipo StepChart
+	public GraphicsStepChart(final String title, XYDataset dataset, JFreeChart chart, String typePlot) 
+	{
+        super(title);
+ 		
+ 		// tipo de gráfico
+ 		if(typePlot == "step") stepChartTheme(chart);
+        else if(typePlot == "line") lineChartTheme(chart); 
+        ChartPanel chartPanel = new ChartPanel(chart);
+        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+  		setContentPane(chartPanel);
+    }
+		
+	// set methods
+	public void setDataset(XYDataset dataset){this.dataset =  dataset; }
+	public void setChar(JFreeChart chart){this.chart =  chart; }
+	
+	//
+	//formato de un gráfico tipo StepChart
+	//
+	private void stepChartTheme(JFreeChart chart) {
+        chart.setBackgroundPaint(Color.white); 		// chart background        
+        final XYPlot plot = chart.getXYPlot(); 		// se obtiene una referencia a la gráfica para futuras modificaciones
+        plot.setBackgroundPaint(Color.white);		// background del área del gráfico
+        plot.setDomainGridlinePaint(Color.black); 	// color cuadricula eje x
+        plot.setRangeGridlinePaint(Color.black);	// color cuadricula eje y
+
+        // change the auto tick unit selection to integer units only...
+        final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+        rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());	       
+	}
+	
+	//
+	// Formato de un gráfico tipo LineChart
+	//
+	private void lineChartTheme(JFreeChart chart) {
+        chart.setBackgroundPaint(Color.white); // chart background        
+        final XYPlot plot = chart.getXYPlot(); // Se obtiene una referencia a la gráfica para futuras modificaciones
+        plot.setBackgroundPaint(Color.white);
+        plot.setDomainGridlinePaint(Color.black);
+        plot.setRangeGridlinePaint(Color.black);
+        
+        // permite cambiar la presentación de las lineas que representan las series de tiempo
+        //final XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+        //renderer.setSeriesLinesVisible(0, false);
+        //renderer.setSeriesShapesVisible(0, true);
+        //plot.setRenderer(renderer);
+
+        // change the auto tick unit selection to integer units only...
+        final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+        rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());	       
+	}
+}

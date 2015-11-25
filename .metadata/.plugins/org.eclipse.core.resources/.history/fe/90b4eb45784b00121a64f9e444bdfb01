@@ -1,0 +1,67 @@
+package market;
+
+import java.io.IOException;
+
+import agents.Generator;
+import agents.Retailer;
+import agents.Transmitter;
+
+public class FtrMain {
+
+	// Constructor vacío
+	public FtrMain(){}
+	
+	public void start() throws IOException{
+		
+		// Generadores
+		Generator gen1 = new Generator("GENCO1");
+		Generator gen2 = new Generator("GENCO2");
+		Generator gen3 = new Generator("GENCO3");
+		//Generator gen4 = new Generator("GENCO4");
+		//Generator gen5 = new Generator("GENCO5");
+		//Generator gen6 = new Generator("GENCO6");
+		//Generator gen7 = new Generator("GENCO7");
+		//Generator gen8 = new Generator("GENCO8");
+		
+		// Comercializadores
+		Retailer ret1 = new Retailer("RETAILER1",1);
+		Retailer ret2 = new Retailer("RETAILER2",2);
+		Retailer ret3 = new Retailer("RETAILER3",3);
+		//Retailer ret4 = new Retailer("RETAILER4");
+		//Retailer ret5 = new Retailer("RETAILER5");
+		//Retailer ret6 = new Retailer("RETAILER6");
+		//Retailer ret7 = new Retailer("RETAILER7");
+		//Retailer ret8 = new Retailer("RETAILER8");
+			
+		// Transmisores
+		Transmitter gridco1 = new Transmitter("GRIDCO1");
+		Transmitter gridco2 = new Transmitter("GRIDCO2");
+		Transmitter gridco3 = new Transmitter("GRIDCO3");
+		//Transmitter trans4 = new Transmitter("GRIDCO4");
+		//Transmitter trans5 = new Transmitter("GRIDCO5");
+		//Transmitter trans6 = new Transmitter("GRIDCO6");
+		//Transmitter trans7 = new Transmitter("GRIDCO7");
+		//Transmitter trans8 = new Transmitter("GRIDCO8");
+		
+		// Unidades de generación
+		// Constructor con id, nombre, nodo, capacidad efectiva, costo de generación
+		GenerationUnit unit1 = new GenerationUnit(1,"U1",1,140,7.5);
+		GenerationUnit unit2 = new GenerationUnit(2,"U2",1,285,6.0);
+		GenerationUnit unit3 = new GenerationUnit(3,"U3",2,90,14.0);
+		GenerationUnit unit4 = new GenerationUnit(4,"U4",3,85,10.0);
+		
+		// Líneas de transmisión
+		TransmissionLine line1 = new TransmissionLine(1,gridco1,1,2,5,126);		// node 1 - node 2
+		TransmissionLine line2 = new TransmissionLine(2,gridco2,1,3,5,250);		// node 1 - node 3
+		TransmissionLine line3 = new TransmissionLine(3,gridco3,2,3,10,130);
+	}
+	
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+	}
+
+}

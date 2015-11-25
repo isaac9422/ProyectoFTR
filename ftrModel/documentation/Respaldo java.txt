@@ -1,0 +1,51 @@
+	//---------------------------------------------------------------------------------------------------------------------------------------
+	//
+	// mercado nodal: liquidación rentas por congestión a los comercializadores
+	//
+	//---------------------------------------------------------------------------------------------------------------------------------------
+	public void nodRetailersCongestionSettlementCOP()
+	{
+		// variables auxiliares
+		double[] nodSettlementCongestionCOP; 	// valor liquidación rentas por congestión
+		double[] nodEnergyDemand; 				// magnitud de la demanda de energía de cada comercializador
+		//double[] nodSettlementEnergyMarket; 	// valor liquidación parcial del mercado
+		
+		System.out.println("\n------------------------------ nod ----> comercializadores: rentas por congestión 	--------------------------------\n");
+		
+		for( int ret = 0; ret < Global.nRetailers; ret++)
+		{
+			// inicialización variables auxiliares
+			nodSettlementCongestionCOP = new double[24];
+			//nodSettlementEnergyMarket = this.getRetailers().get(ret).getNodSettlementEnergyMarket().clone();
+			
+			for(int h = 0; h < 24; h++)
+			{
+				// liquidación rentas por congestión correspondientes a contratos PC para cada hora h para el comercializador ret
+				for(int contract = 0; contract < this.getRetailers().get(ret).getGenerationContractsPC().size(); contract++)
+				{
+					nodSettlementCongestionCOP[h] = nodSettlementCongestionCOP[h]
+							+ this.getRetailers().get(ret).getGenerationContractsPC().get(contract).getContractPower()[h]
+									* Math.max(0,(this.getRealDispatch().getNodalPrices()[this.getGenerationContractsPC().get(contract).getWithdrawalNodeId()][h]
+											- this.getRealDispatch().getNodalPrices()[this.getGenerationContractsPC().get(contract).getSourceNodeId()][h]));
+				}
+				// liquidación rentas por congestión correspondientes a contratos PD para cada hora h para el comercializador ret
+				for(int contract = 0; contract < this.getRetailers().get(ret).getGenerationContractsPD().size(); contract++)
+				{
+					nodSettlementCongestionCOP[h] = nodSettlementCongestionCOP[h]
+							+ this.getRetailers().get(ret).getGenerationContractsPD().get(contract).getDispatchedContractPowerPD()[h]
+									* Math.max(0,(this.getRealDispatch().getNodalPrices()[this.getGenerationContractsPD().get(contract).getWithdrawalNodeId()][h]
+											- this.getRealDispatch().getNodalPrices()[this.getGenerationContractsPD().get(contract).getSourceNodeId()][h]));
+				}
+				// actualización de la liquidación total del mercado
+				//nodSettlementEnergyMarket[h] = nodSettlementEnergyMarket[h] + nodSettlementCongestionCOP[h];
+			}
+			this.getRetailers().get(ret).setNodSettlementCongestionCOP(nodSettlementCongestionCOP);
+			//this.getRetailers().get(ret).setNodSettlementEnergyMarket(nodSettlementEnergyMarket);
+			
+			// imprimir resultados
+			System.out.print("\t" + this.getRetailers().get(ret).getRetailerName() + "\t");
+			Global.rw.printVector(nodSettlementCongestionCOP);
+			//Global.rw.printVector(nodSettlementEnergyMarket);
+		}
+	}
+	

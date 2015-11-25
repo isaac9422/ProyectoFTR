@@ -1,0 +1,36 @@
+function plots_congestion(xlimu,numberOfXTickMarks,xTickString,rot)
+
+    congestion = importdata('z.nodCongestionRents.csv', ',');
+    
+    hourcongestion2010 = mean(congestion(1:365,:));
+    hourcongestion2011 = mean(congestion(366:730,:));
+    dailycongestion = mean(congestion,2);
+    
+    subplot(2,1,1)
+    bar([hourcongestion2010' hourcongestion2011'],'group');
+    
+    subplot(2,1,2)
+    plot(dailycongestion, '-.', 'Color',[0.6,0.6,0.6], 'LineWidth',1.0);
+    %title('Liquidación total generadores', 'FontSize', 12, 'FontWeight','Bold');
+    %legend('Rentas por congestión','Location','Best');
+    %xlabel('Fecha','FontSize', 10, 'FontWeight','Bold');
+    ylabel('Rentas por congestión (COP)', 'FontSize', 10, 'FontWeight','Bold');
+    set(gcf,'PaperPosition',[0 0 10 5]);
+    set(gcf,'PaperSize',[10 5]);
+    xlim(xlimu);
+    xl = xlim();
+    xTickLocations = linspace(xl(1), xl(2), numberOfXTickMarks);
+    set(gca,'XTick', xTickLocations);
+    b = get(gca,'XTick');
+    set(gca,'XTickLabel', xTickString);
+    a = get(gca,'XTickLabel');
+    set(gca,'XTickLabel',[]);
+    c = get(gca,'YTick');
+    text(b,repmat(c(1)-.4*(c(2)-c(1)),numberOfXTickMarks,1),a,'HorizontalAlignment','center','rotation',rot,'FontSize', 10, 'FontWeight','Bold');
+    set(gca,'FontWeight','bold','FontSize',10);      
+
+    %fig = figure(1);
+    saveas(gcf,'z. plot liquidación congestión','pdf');
+    
+    %close all
+end

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename type &apos;market.Graphics&apos; to &apos;GraphicsStepChart&apos;&#x0D;&#x0A;- Original project: &apos;ftrModel&apos;&#x0D;&#x0A;- Original element: &apos;market.Graphics&apos;&#x0D;&#x0A;- Renamed element: &apos;market.GraphicsStepChart&apos;&#x0D;&#x0A;- Update references to refactored element&#x0D;&#x0A;- Update textual occurrences in comments and strings" description="Rename type &apos;Graphics&apos;" flags="589830" id="org.eclipse.jdt.ui.rename.type" input="/src&lt;market{Graphics.java[Graphics" matchStrategy="1" name="GraphicsStepChart" qualified="false" references="true" similarDeclarations="false" stamp="1362765980705" textual="false" version="1.0"/>
+</session>

@@ -1,0 +1,29 @@
+package market;
+
+import java.awt.Font;
+
+import javax.swing.JFrame;
+
+//import org.jfree.chart.ChartPanel;
+
+public class Global {
+	
+	// index
+	public static int nUnits 		= 4; 	// número de unidades de generación
+	public static int nGencos 		= 3; 	// número de compañías de generación
+	public static int nLines 		= 3;	// número de líneas de transmisión
+	public static int nNodes		= 7;	// número de nodos (fronteras coemrciales)
+	public static int nContracts 	= 4;  	// número de contratos de generación
+	public static int nGridcos		= 3; 	// número de compañías de transmisión
+	public static int nRetailers	= 3; 	// número de compañías comercializadoras
+	public static int horizon		= 5; 	// número de períodos de simulación
+	public static int nlags			= 3; 	// número de rezagos para promediación del precio [VERIFICAR]
+	public static ReadWrite rw		= new  ReadWrite();	// función para leer y escribir
+	//public static MathFunctions MathFun = new MathFunctions(); // variables to use several math process
+	//public static Graphs graphs = new Graphs(); 
+	//public static ChartPanel panel = null; // = new ChartPanel(chart);
+	//public static JFrame frame = new JFrame("Graphs");
+	//public static Font labelFont = new Font("Arial", Font.BOLD, 16);
+	//public static Font tickFont = new Font("Arial", Font.BOLD, 12);
+	//public static Font titleFont = new Font("Arial", Font.BOLD, 18);
+}
