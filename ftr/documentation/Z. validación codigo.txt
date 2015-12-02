@@ -1,0 +1,283 @@
+				mercado uninodal		mercado nodal
+contratos PC		igual					igual
+	setNodContractEnergySalesPCMWh getContractEnergySalesPCMWh
+	setNodContractEnergySalesPCCOP getContractEnergySalesPCCOP
+	setNodContractEnergyPurchasesPCMWh	getContractEnergyPurchasesPCMWh
+	setNodContractEnergyPurchasesPCCOP	getContractEnergyPurchasesPCCOP
+	
+contratos PD		igual					igual
+	setNodContractEnergySalesPDMWh getContractEnergySalesPDMWh
+	setNodContractEnergySalesPDCOP getContractEnergySalesPDCOP
+	setNodContractEnergyPurchasesPDMWh 	getContractEnergyPurchasesPDMWh
+	setNodContractEnergyPurchasesPDCOP	getContractEnergyPurchasesPDCOP
+
+getNodRetailersContractEnergyPurchasesPCMWh
+setNodRetailersContractEnergyPurchasesPCMWh
+	nodRetailersContractEnergyPurchasesPCMWh
+		getNodContractEnergyPurchasesPCMWh
+		
+getNodRetailersContractEnergyPurchasesPCCOP
+setNodRetailersContractEnergyPurchasesPCCOP
+	nodRetailersContractEnergyPurchasesPCCOP
+		getNodContractEnergyPurchasesPCCOP
+
+getNodRetailersContractEnergyPurchasesPDMWh
+setNodRetailersContractEnergyPurchasesPDMWh
+	nodRetailersContractEnergyPurchasesPDMWh
+		getNodContractEnergyPurchasesPDMWh
+
+getNodRetailersContractEnergyPurchasesPDCOP		
+setNodRetailersContractEnergyPurchasesPDCOP	
+	nodRetailersContractEnergyPurchasesPDCOP	
+		getNodContractEnergyPurchasesPDCOP
+		
+getNodRetailersPoolEnergyPurchasesMWh		
+setNodRetailersPoolEnergyPurchasesMWh		
+	nodRetailersPoolEnergyPurchasesMWh	
+	getNodPoolEnergyPurchasesMWh	
+		
+getNodRetailersPoolEnergyPurchasesCOP	
+setNodRetailersPoolEnergyPurchasesCOP		
+	nodRetailersPoolEnergyPurchasesCOP	
+		getNodPoolEnergyPurchasesCOP
+		
+getNodRetailersPoolEnergySalesMWh		
+setNodRetailersPoolEnergySalesMWh		
+	nodRetailersPoolEnergySalesMWh		
+		getNodPoolEnergySalesMWh	
+			
+getNodRetailersPoolEnergySalesCOP		
+setNodRetailersPoolEnergySalesCOP
+	nodRetailersPoolEnergySalesCOP
+		getNodPoolEnergySalesCOP
+		
+getNodRetailersSetttlementEnergyMarketCOP
+setNodRetailersSetttlementEnergyMarketCOP	
+	nodRetailersSetttlementEnergyMarketCOP
+		getNodSettlementEnergyMarket
+	
+getNodGenerationUnitsContractEnergySalesPCMWh
+setNodGenerationUnitsContractEnergySalesPCMWh
+	nodGenerationUnitsContractEnergySalesPCMWh		
+		getNodContractEnergySalesPCMWh	
+		
+getNodGenerationUnitsContractEnergySalesPCCOP
+setNodGenerationUnitsContractEnergySalesPCCOP	
+	nodGenerationUnitsContractEnergySalesPCCOP
+		getNodContractEnergySalesPCCOP
+		
+getNodGenerationUnitsContractEnergySalesPDMWh
+setNodGenerationUnitsContractEnergySalesPDMWh
+	nodGenerationUnitsContractEnergySalesPDMWh
+		getNodContractEnergySalesPDMWh
+
+getNodGenerationUnitsContractEnergySalesPDCOP
+setNodGenerationUnitsContractEnergySalesPDCOP	
+	nodGenerationUnitsContractEnergySalesPDCOP	
+		getNodContractEnergySalesPDCOP
+
+getNodGenerationUnitsPoolEnergySalesMWh
+getNodGenerationUnitsPoolEnergySalesMWh
+nodGenerationUnitsPoolEnergySalesMWh
+getNodPoolEnergySalesMWh
+
+getNodGenerationUnitsPoolEnergySalesCOP
+setNodGenerationUnitsPoolEnergySalesCOP
+nodGenerationUnitsPoolEnergySalesCOP
+getNodPoolEnergySalesCOP
+
+getNodGenerationUnitsPoolEnergyPurchasesMWh
+setNodGenerationUnitsPoolEnergyPurchasesMWh
+nodGenerationUnitsPoolEnergyPurchasesMWh
+getNodPoolEnergyPurchasesMWh
+
+getNodGenerationUnitsPoolEnergyPurchasesCOP
+setNodGenerationUnitsPoolEnergyPurchasesCOP
+nodGenerationUnitsPoolEnergyPurchasesCOP
+getNodPoolEnergyPurchasesCOP
+
+getNodGenerationUnitsSetttlementEnergyMarketCOP
+setNodGenerationUnitsSetttlementEnergyMarketCOP
+nodGenerationUnitsSetttlementEnergyMarketCOP
+getNodSettlementEnergyMarket
+
+getNodTransmittersSettlementUsageChargesCOP
+setNodTransmittersSettlementUsageChargesCOP
+nodTransmittersSettlementUsageChargesCOP
+getNodSettlementUsageChargesCOP
+
+getNodTransmittersSettlementComplementaryChargesCOP
+setNodTransmittersSettlementComplementaryChargesCOP
+nodTransmittersSettlementComplementaryChargesCOP
+getNodSettlementComplementaryChargesCOP
+
+getNodTransmitterCongestionRentsCOP
+setNodTransmitterCongestionRentsCOP
+nodTransmitterCongestionRentsCOP
+getNodSettlementCongestionCOP
+
+getNodRetailersCongestionRentsCOP
+setNodRetailersCongestionRentsCOP
+nodRetailersCongestionRentsCOP
+getNodSettlementCongestionCOP
+
+getNodRetailersComplementaryChargesCOP
+setNodRetailersComplementaryChargesCOP
+nodRetailersComplementaryChargesCOP
+getNodSettlementComplementaryChargesCOP
+
+getNodRetailersUsageChargesCOP
+setNodRetailersUsageChargesCOP
+nodRetailersUsageChargesCOP
+getNodSettlementUsageChargesCOP
+
+setNodSettlementEqualElemets
+	setNodContractEnergySalesPCMWh			getContractEnergySalesPCMWh			
+	setNodContractEnergySalesPCCOP			getContractEnergySalesPCCOP
+	setNodContractEnergySalesPDMWh			getContractEnergySalesPDMWh
+	setNodContractEnergySalesPDCOP			getContractEnergySalesPDCOP
+	setNodContractEnergyPurchasesPCMWh		getContractEnergyPurchasesPCMWh
+	setNodContractEnergyPurchasesPCCOP		getContractEnergyPurchasesPCCOP
+	setNodContractEnergyPurchasesPDMWh		getContractEnergyPurchasesPDMWh
+	setNodContractEnergyPurchasesPDCOP		getContractEnergyPurchasesPDCOP
+
+------------------------------------------------------------------------------------------------------------------------------
+
+getFtrRetailersContractEnergyPurchasesPCMWh
+setFtrRetailersContractEnergyPurchasesPCMWh
+	ftrRetailersContractEnergyPurchasesPCMWh
+	getFtrContractEnergyPurchasesPCMWh
+
+getFtrRetailersContractEnergyPurchasesPCCOP
+setFtrRetailersContractEnergyPurchasesPCCOP
+	ftrRetailersContractEnergyPurchasesPCCOP
+	getFtrContractEnergyPurchasesPCCOP
+
+getFtrRetailersContractEnergyPurchasesPDMWh
+setFtrRetailersContractEnergyPurchasesPDMWh
+	ftrRetailersContractEnergyPurchasesPDMWh
+	getFtrContractEnergyPurchasesPDMWh
+	
+getFtrRetailersContractEnergyPurchasesPDCOP	
+setFtrRetailersContractEnergyPurchasesPDCOP
+	ftrRetailersContractEnergyPurchasesPDCOP
+	getFtrContractEnergyPurchasesPDCOP
+
+getFtrRetailersPoolEnergyPurchasesMWh
+setFtrRetailersPoolEnergyPurchasesMWh
+	ftrRetailersPoolEnergyPurchasesMWh
+	getFtrPoolEnergyPurchasesMWh
+
+getFtrRetailersPoolEnergyPurchasesCOP	
+setFtrRetailersPoolEnergyPurchasesCOP	
+	ftrRetailersPoolEnergyPurchasesCOP
+	getFtrPoolEnergyPurchasesCOP
+
+getFtrRetailersPoolEnergySalesMWh
+setFtrRetailersPoolEnergySalesMWh
+	ftrRetailersPoolEnergySalesMWh
+	getFtrPoolEnergySalesMWh
+
+getFtrRetailersPoolEnergySalesCOP
+setFtrRetailersPoolEnergySalesCOP
+	ftrRetailersPoolEnergySalesCOP
+	getFtrPoolEnergySalesCOP
+
+getFtrRetailersSetttlementEnergyMarketCOP
+setFtrRetailersSetttlementEnergyMarketCOP
+	ftrRetailersSetttlementEnergyMarketCOP
+	getFtrSettlementEnergyMarket
+
+getFtrGenerationUnitsContractEnergySalesPCMWh
+setFtrGenerationUnitsContractEnergySalesPCMWh
+	ftrGenerationUnitsContractEnergySalesPCMWh
+	getFtrContractEnergySalesPCMWh
+
+getFtrGenerationUnitsContractEnergySalesPCCOP
+setFtrGenerationUnitsContractEnergySalesPCCOP
+	ftrGenerationUnitsContractEnergySalesPCCOP
+	getFtrContractEnergySalesPCCOP
+
+getFtrGenerationUnitsContractEnergySalesPDMWh
+setFtrGenerationUnitsContractEnergySalesPDMWh
+	ftrGenerationUnitsContractEnergySalesPDMWh
+	getFtrContractEnergySalesPDMWh
+
+getFtrGenerationUnitsContractEnergySalesPDCOP	
+setFtrGenerationUnitsContractEnergySalesPDCOP
+	ftrGenerationUnitsContractEnergySalesPDCOP
+	getFtrContractEnergySalesPDCOP
+
+getFtrGenerationUnitsPoolEnergySalesMWh
+setFtrGenerationUnitsPoolEnergySalesMWh
+	ftrGenerationUnitsPoolEnergySalesMWh
+	getFtrPoolEnergySalesMWh
+
+getFtrGenerationUnitsPoolEnergySalesCOP
+setFtrGenerationUnitsPoolEnergySalesCOP
+	ftrGenerationUnitsPoolEnergySalesCOP
+	getFtrPoolEnergySalesCOP
+
+getFtrGenerationUnitsPoolEnergyPurchasesMWh
+setFtrGenerationUnitsPoolEnergyPurchasesMWh
+	ftrGenerationUnitsPoolEnergyPurchasesMWh
+	getFtrPoolEnergyPurchasesMWh()[h
+
+getFtrGenerationUnitsPoolEnergyPurchasesCOP
+setFtrGenerationUnitsPoolEnergyPurchasesCOP	
+	ftrGenerationUnitsPoolEnergyPurchasesCOP	
+	getFtrPoolEnergyPurchasesCOP	
+	
+getFtrGenerationUnitsSetttlementEnergyMarketCOP	
+setFtrGenerationUnitsSetttlementEnergyMarketCOP	
+	ftrGenerationUnitsSetttlementEnergyMarketCOP	
+	getFtrSettlementEnergyMarket	
+	
+getFtrTransmittersSettlementUsageChargesCOP	
+setFtrTransmittersSettlementUsageChargesCOP	
+	ftrTransmittersSettlementUsageChargesCOP	
+	getFtrSettlementUsageChargesCOP	
+
+getFtrTransmitterCongestionRentsCOP	
+setFtrTransmitterCongestionRentsCOP	
+	ftrTransmitterCongestionRentsCOP	
+	getFtrSettlementCongestionCOP	
+	
+getFtrRetailersCongestionRentsCOP	
+setFtrRetailersCongestionRentsCOP	
+	ftrRetailersCongestionRentsCOP	
+	getFtrSettlementCongestionCOP	
+	
+getFtrRetailersComplementaryChargesCOP	
+setFtrRetailersComplementaryChargesCOP	
+	ftrRetailersComplementaryChargesCOP	
+	getFtrSettlementComplementaryChargesCOP	
+	
+getFtrRetailersUsageChargesCOP	
+setFtrRetailersUsageChargesCOP	
+	ftrRetailersUsageChargesCOP	
+	getFtrSettlementUsageChargesCOP	
+	
+getFtrTransmittersSettlementComplementaryChargesCOP	
+setFtrTransmittersSettlementComplementaryChargesCOP	
+	ftrTransmittersSettlementComplementaryChargesCOP	
+	getFtrSettlementComplementaryChargesCOP	
+	
+getFtrsIncomeSettlementCOP
+setFtrsIncomeSettlementCOP
+	ftrSettlementFtrsIncomeCOP
+	getFtrSettlementCOP
+
+setFtrSetSettlementEqualElemets
+	setFtrContractEnergySalesPCMWh			getContractEnergySalesPCMWh
+	setFtrContractEnergySalesPCCOP			getContractEnergySalesPCCOP
+	setFtrContractEnergySalesPDMWh			getContractEnergySalesPDMWh
+	setFtrContractEnergySalesPDCOP			getContractEnergySalesPDCOP
+	setFtrContractEnergyPurchasesPCMWh		getContractEnergyPurchasesPCMWh
+	setFtrContractEnergyPurchasesPCCOP		getContractEnergyPurchasesPCCOP
+	setFtrContractEnergyPurchasesPDMWh		getContractEnergyPurchasesPDMWh
+	setFtrContractEnergyPurchasesPDCOP		getContractEnergyPurchasesPDCOP
+	
+
+
+

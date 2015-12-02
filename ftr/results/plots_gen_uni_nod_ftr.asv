@@ -1,0 +1,27 @@
+function plots_gen_uni_nod_ftr(xlimu,numberOfXTickMarks,xTickString,rot)
+
+    unGenerationUnitsSettlementEnergyMarketCOP = importdata('unGenerationUnitsSettlementEnergyMarketCOP.csv', ',');
+    nodGenerationUnitsSettlementEnergyMarketCOP = importdata('nodGenerationUnitsSettlementEnergyMarketCOP.csv',',');
+    ftrGenerationUnitsSettlementEnergyMarketCOP = importdata('ftrGenerationUnitsSettlementEnergyMarketCOP.csv',',');
+
+    for i = 1:24
+        figure(i)
+        plot(unGenerationUnitsSettlementEnergyMarketCOP.data(:,i), '-k', 'LineWidth',1.0);
+        hold on
+        plot(nodGenerationUnitsSettlementEnergyMarketCOP.data(:,i), '-r', 'LineWidth',1.0);
+        plot(ftrGenerationUnitsSettlementEnergyMarketCOP.data(:,i), '-b', 'LineWidth',1.0);
+        title('Liquidación total generadores', 'FontSize', 12, 'FontWeight','Bold');
+        legend('M. uninodal','M. nodal','M. ftrs','Location','Best');
+        xlabel('Tiempo (días)','FontSize', 12, 'FontWeight','Bold');
+        ylabel('Liquidación (COP)', 'FontSize', 12, 'FontWeight','Bold');
+        set(gca,'FontWeight','bold','FontSize', 10);
+        set(gcf,'PaperPosition',[0 0 10 5]);
+        set(gcf,'PaperSize',[10 5]);
+        xlim(xlimu);  
+        hold off
+
+        fig = figure(i);
+        saveas(fig,strcat('plot liq ene gen hora-',num2str(i)),'png');
+    end
+    close all
+end

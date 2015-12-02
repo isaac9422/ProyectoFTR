@@ -1,0 +1,27 @@
+function plots_ftr(xlimu,numberOfXTickMarks,xTickString,rot)
+
+    ftrGenerationUnitsSettlementEnergyMarketCOP = importdata('ftrGenerationUnitsSettlementEnergyMarketCOP.csv', ',');
+    ftrRetailersSettlementEnergyMarketCOP = importdata('ftrRetailersSettlementEnergyMarketCOP.csv',',');
+    ftrTransmittersSettlementUsageChargesCOP = importdata('ftrTransmittersSettlementUsageChargesCOP.csv',',');
+
+    for i = 1:24
+        figure(i)
+        plot(ftrGenerationUnitsSettlementEnergyMarketCOP.data(:,i), '-k', 'LineWidth',1.0);
+        hold on
+        plot(ftrRetailersSettlementEnergyMarketCOP.data(:,i), '-r', 'LineWidth',1.0);
+        plot(ftrTransmittersSettlementUsageChargesCOP.data(:,i), '-b', 'LineWidth',1.0);
+        title('Liquidación total del mercado nodal con ftrs', 'FontSize', 12, 'FontWeight','Bold');
+        legend('Generadores','Comercializadores','Transmisores','Location','Best');
+        xlabel('Tiempo (días)','FontSize', 12, 'FontWeight','Bold');
+        ylabel('Liquidación (COP)', 'FontSize', 12, 'FontWeight','Bold');
+        set(gca,'FontWeight','bold','FontSize', 10);
+        set(gcf,'PaperPosition',[0 0 10 5]);
+        set(gcf,'PaperSize',[10 5]);
+        xlim(xlimu);  
+        hold off
+
+        fig = figure(i);
+        saveas(fig,strcat('plot ftr liquidación hora-',num2str(i)),'png');
+    end
+    close all
+end

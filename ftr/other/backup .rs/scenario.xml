@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Scenario>
+<repast.simphony.dataLoader.engine.ClassNameDataLoaderAction context="agents" file="repast.simphony.dataLoader.engine.ClassNameDataLoaderAction_0.xml" />
+<repast.simphony.action.display context="agents" file="repast.simphony.action.display_0.xml" />
+<repast.simphony.action.display context="agents" file="repast.simphony.action.display_1.xml" />
+<repast.simphony.action.data_set context="agents" file="repast.simphony.action.data_set_1.xml" />
+<repast.simphony.action.file_sink context="agents" file="repast.simphony.action.file_sink_1.xml" />
+<repast.simphony.action.time_series_chart context="agents" file="repast.simphony.action.time_series_chart_1.xml" />
+<model.initializer class="agents.ZombieInitializer"/>
+</Scenario>

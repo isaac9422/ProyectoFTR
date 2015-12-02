@@ -1,0 +1,113 @@
+package utilities;
+
+import javax.swing.*;
+
+import market.FtrMain;
+
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.Random;
+
+public class Interfaz extends JFrame implements ActionListener {
+	
+	private static final long serialVersionUID = 1L;
+
+	// elementos de la interfaz
+	private JPanel panelNorth;
+	private JPanel panelWest;
+	private JPanel panelCenter;
+	private ChartPanel chartPanel;
+	private JButton buttonStart = new JButton("Start");
+	private JLabel labelNorth = new JLabel ("Panel norte");
+	private JLabel labelWest = new JLabel ("Panel este");
+	
+	public Interfaz(String title){
+		
+		super(title);
+		
+		// contenedor
+		final Container content = getContentPane();  
+		content.setLayout(new BorderLayout());
+				
+		// panel del norte
+		panelNorth = new JPanel();
+		panelNorth.setLayout(new BorderLayout());
+		panelNorth.add(labelNorth, BorderLayout.CENTER);
+		panelNorth.add(buttonStart, BorderLayout.WEST);
+		panelNorth.setBackground(Color.green);
+		
+		// panel del este
+		panelWest = new JPanel();
+		panelWest.setLayout(new BorderLayout());
+		panelWest.add(labelWest, BorderLayout.CENTER);
+		panelWest.setBackground(Color.yellow);
+				
+		// panel central
+		panelCenter = new JPanel();
+		panelCenter.setLayout(new BorderLayout());
+		panelCenter.setBackground(Color.red);
+		this.add(panelCenter,BorderLayout.CENTER);
+		
+		// actionlistener
+		buttonStart.addActionListener(this);
+		
+        // agregación de elementos al frame princiopal
+		content.add(panelNorth,BorderLayout.NORTH);
+		content.add(panelWest,BorderLayout.WEST);
+		this.add(panelCenter,BorderLayout.CENTER);
+        
+        // propiedades finales de la ventana
+		this.setSize(600, 300);
+		this.setVisible(true);
+		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+	}
+	
+	public void actualizarPantalla()
+	{ 
+		SwingUtilities.updateComponentTreeUI(this); 
+		this.validateTree(); 
+	} 
+		
+	public void actionPerformed(final java.awt.event.ActionEvent e) {
+		if(e.getSource() == buttonStart)
+		{
+			FtrMain um = new FtrMain(); // ejecución del modelo FTRs
+			//um.start();
+			um.run();
+			
+		}
+	}
+}
+
+/*public class NumberWorker extends SwingWorker<String, Object> {
+
+private Random r = new Random();
+
+@Override
+protected String doInBackground() throws Exception {
+	long s = System.currentTimeMillis();
+	while (System.currentTimeMillis() - s < 5000 && !Thread.currentThread().isInterrupted()) {
+		r.nextInt();
+	}
+	return String.valueOf(r.nextInt(10) + 1);
+}
+
+@Override
+protected void done() {
+	try {
+
+		FtrMain um = new FtrMain(); // ejecución del modelo FTRs
+		try {
+			um.start(panelCenter);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	} catch (Exception ignore) {
+	}
+}
+}*/

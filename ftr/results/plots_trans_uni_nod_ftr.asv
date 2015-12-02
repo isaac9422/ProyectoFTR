@@ -1,0 +1,27 @@
+function plots_trans_uni_nod_ftr(xlimu,numberOfXTickMarks,xTickString,rot)
+    
+    unTransmittersSettlementUsageChargesCOP = importdata('unTransmittersSettlementUsageChargesCOP.csv', ',');
+    nodTransmittersSettlementUsageChargesCOP = importdata('nodTransmittersSettlementUsageChargesCOP.csv',',');
+    ftrTransmittersSettlementUsageChargesCOP = importdata('ftrTransmittersSettlementUsageChargesCOP.csv',',');
+
+    for i = 1:24
+        figure(i)
+        plot(unTransmittersSettlementUsageChargesCOP.data(:,i), '-k', 'LineWidth',1.0);
+        hold on
+        plot(nodTransmittersSettlementUsageChargesCOP.data(:,i), '-r', 'LineWidth',1.0);
+        plot(ftrTransmittersSettlementUsageChargesCOP.data(:,i), '-b', 'LineWidth',1.0);
+        title('Liquidación total de la transmisión', 'FontSize', 12, 'FontWeight','Bold');
+        legend('M. uninodal','M. nodal','M. ftrs','Location','Best');
+        xlabel('Tiempo (días)','FontSize', 12, 'FontWeight','Bold');
+        ylabel('Liquidación (COP)', 'FontSize', 12, 'FontWeight','Bold');
+        set(gca,'FontWeight','bold','FontSize', 10);
+        set(gcf,'PaperPosition',[0 0 10 5]);
+        set(gcf,'PaperSize',[10 5]);
+        xlim(xlimu); 
+        hold off
+
+        fig = figure(i);
+        saveas(fig,strcat('plot tra liquidación hora-',num2str(i)),'png');
+    end
+    close all
+end
